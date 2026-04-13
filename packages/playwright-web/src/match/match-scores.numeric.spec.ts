@@ -46,7 +46,7 @@ test.describe("Match Scores - Numeric", () => {
     );
 
     // Navigate to match scoresheet page
-    await page.goto(`/dashboard/games/${gameId}/${match.id}`);
+    await page.goto(`/games/${gameId}/${match.id}`);
 
     // Verify match name in CardTitle (scoped to card, avoids breadcrumb)
     await expect(

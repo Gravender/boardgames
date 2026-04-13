@@ -51,9 +51,7 @@ test.describe("Match Scoresheet Dialogs - Manual Winner and Tie Breaker", () => 
     await page.getByRole("button", { name: "Ok" }).click();
 
     await expect(page).toHaveURL(
-      new RegExp(
-        `/dashboard/games/${created.gameId}/${created.match.id}/summary`,
-      ),
+      new RegExp(`/games/${created.gameId}/${created.match.id}/summary`),
       { timeout: 20000 },
     );
   });
@@ -106,9 +104,7 @@ test.describe("Match Scoresheet Dialogs - Manual Winner and Tie Breaker", () => 
 
     await page.getByRole("button", { name: "Finish", exact: true }).click();
     await expect(page).toHaveURL(
-      new RegExp(
-        `/dashboard/games/${created.gameId}/${created.match.id}/summary`,
-      ),
+      new RegExp(`/games/${created.gameId}/${created.match.id}/summary`),
       { timeout: 20000 },
     );
   });

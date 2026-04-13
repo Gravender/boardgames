@@ -53,7 +53,7 @@ export function GameItem({ game }: GameCardProps) {
       className="hover:bg-muted/50 transition-colors"
     >
       <Link
-        href={`/dashboard/games/${game.type === "shared" ? "shared/" : ""}${game.id}`}
+        href={`/games/${game.type === "shared" ? "shared/" : ""}${game.id}`}
         className="flex min-w-0 flex-1 items-center gap-4"
       >
         <GameImage

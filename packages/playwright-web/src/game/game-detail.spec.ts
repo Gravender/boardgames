@@ -18,7 +18,7 @@ test.describe("Game Detail Page", () => {
   test("Navigate to game detail page", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
     // Navigate to games list and click on game
-    await page.goto("/dashboard/games");
+    await page.goto("/games");
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
@@ -36,7 +36,7 @@ test.describe("Game Detail Page", () => {
 
   test("Verify game information display", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
-    await page.goto("/dashboard/games");
+    await page.goto("/games");
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
@@ -59,7 +59,7 @@ test.describe("Game Detail Page", () => {
 
   test("Verify statistics link", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
-    await page.goto("/dashboard/games");
+    await page.goto("/games");
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
@@ -76,7 +76,7 @@ test.describe("Game Detail Page", () => {
 
   test("Verify match history display", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
-    await page.goto("/dashboard/games");
+    await page.goto("/games");
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
@@ -98,7 +98,7 @@ test.describe("Game Detail Page", () => {
 
   test("Verify add match button", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
-    await page.goto("/dashboard/games");
+    await page.goto("/games");
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);

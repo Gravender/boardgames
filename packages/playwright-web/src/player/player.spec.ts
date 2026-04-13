@@ -13,7 +13,7 @@ test.describe("Players Page", () => {
 
   test("Add Player", async ({ page, browserName }) => {
     const browserPlayerName = browserName + "_" + PLAYER_NAME;
-    await page.goto("/dashboard/players");
+    await page.goto("/players");
     await page.getByRole("button", { name: "add player" }).click();
     await page
       .getByRole("textbox", { name: "Player Name" })
@@ -31,7 +31,7 @@ test.describe("Players Page", () => {
   test("Edit Player", async ({ page, browserName }) => {
     const browserPlayerName = browserName + "_" + PLAYER_NAME;
     const editedBrowserPlayerName = browserName + "_" + EDITED_PLAYER_NAME;
-    await page.goto("/dashboard/players");
+    await page.goto("/players");
     await page.getByRole("textbox", { name: "Search players" }).click();
     await page
       .getByRole("textbox", { name: "Search players" })

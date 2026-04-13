@@ -23,10 +23,7 @@ interface PlayerItemProps {
 
 const getPlayerPath = (player: ListPlayer) => {
   const id = player.type === "shared" ? player.sharedPlayerId : player.id;
-  const prefix =
-    player.type === "original"
-      ? "/dashboard/players/"
-      : "/dashboard/players/shared/";
+  const prefix = player.type === "original" ? "/players/" : "/players/shared/";
   return `${prefix}${id}/insights`;
 };
 

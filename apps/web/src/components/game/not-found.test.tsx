@@ -19,7 +19,7 @@ describe("GameNotFound", () => {
     );
     expect(screen.getByRole("link", { name: /Browse Games/i })).toHaveAttribute(
       "href",
-      "/dashboard/games",
+      "/games",
     );
     expect(screen.getByText(/GAME_404/)).toBeInTheDocument();
   });

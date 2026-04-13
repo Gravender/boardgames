@@ -13,7 +13,7 @@ test.describe("Game List", () => {
 
   test("Add Game when no games exist", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
-    await page.goto("/dashboard/games");
+    await page.goto("/games");
     await page.getByRole("button", { name: "add game" }).click();
     await page.getByPlaceholder("Game name").fill(browserGameName);
     await expect(
@@ -53,8 +53,8 @@ test.describe("Game List", () => {
     await expect(page.getByText(/Game .* created successfully!/i)).toBeVisible({
       timeout: 10000,
     });
-    await page.goto("/dashboard/");
-    await page.goto("/dashboard/games");
+    await page.goto("/dashboard");
+    await page.goto("/games");
     await page.getByRole("textbox", { name: "Search games..." }).click();
     await page
       .getByRole("textbox", { name: "Search games..." })

@@ -45,7 +45,7 @@ test.describe("Match Delete", () => {
     });
 
     // Navigate to game detail page
-    await page.goto(`/dashboard/games/${gameId}`);
+    await page.goto(`/games/${gameId}`);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       browserGameName,
       { timeout: 15000 },
@@ -111,7 +111,7 @@ test.describe("Match Delete", () => {
     });
 
     // Navigate to game detail page
-    await page.goto(`/dashboard/games/${gameId}`);
+    await page.goto(`/games/${gameId}`);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       browserGameName,
       { timeout: 15000 },

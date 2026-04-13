@@ -36,7 +36,7 @@ export async function setupAndOpenScoresheetMatch(
     ],
   });
 
-  await page.goto(`/dashboard/games/${created.gameId}/${created.match.id}`);
+  await page.goto(`/games/${created.gameId}/${created.match.id}`);
   await expect(
     page.locator('[data-slot="card"] [data-slot="card-title"]', {
       hasText: matchName,

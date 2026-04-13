@@ -44,7 +44,7 @@ test.describe("Match Finish", () => {
     );
 
     // Navigate to the match scoresheet
-    await page.goto(`/dashboard/games/${gameId}/${match.id}`);
+    await page.goto(`/games/${gameId}/${match.id}`);
     // Scope to card to avoid breadcrumb duplicate
     await expect(
       page.locator('[data-slot="card"] [data-slot="card-title"]', {
@@ -141,7 +141,7 @@ test.describe("Match Finish", () => {
     );
 
     // Navigate to the match
-    await page.goto(`/dashboard/games/${gameId}/${match.id}`);
+    await page.goto(`/games/${gameId}/${match.id}`);
     // Scope to card to avoid breadcrumb duplicate
     await expect(
       page.locator('[data-slot="card"] [data-slot="card-title"]', {

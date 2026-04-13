@@ -54,7 +54,7 @@ export const GroupDetail = ({ groupId }: { groupId: number }) => {
 
   useEffect(() => {
     if (isError) {
-      router.replace("/dashboard/groups");
+      router.replace("/groups");
     }
   }, [isError, router]);
 
@@ -74,7 +74,7 @@ export const GroupDetail = ({ groupId }: { groupId: number }) => {
     <div className="relative mx-auto min-h-[75vh] w-full max-w-3xl px-4 pb-16 pt-6">
       <nav className="mb-6" aria-label="Breadcrumb">
         <Link
-          href="/dashboard/groups"
+          href="/groups"
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm font-medium transition-colors"
         >
           <ArrowLeft className="size-4" aria-hidden />
@@ -128,7 +128,7 @@ export const GroupDetail = ({ groupId }: { groupId: number }) => {
               editOpen={isEditOpen}
               onEditOpenChange={setIsEditOpen}
               onDeleted={() => {
-                router.push("/dashboard/groups");
+                router.push("/groups");
               }}
             />
           </div>
@@ -157,7 +157,7 @@ export const GroupDetail = ({ groupId }: { groupId: number }) => {
               <li key={p.id}>
                 <Link
                   prefetch={true}
-                  href={`/dashboard/players/${p.id}/stats`}
+                  href={`/players/${p.id}/stats`}
                   className="border-border/60 from-card hover:border-primary/20 bg-linear-to-br group/row flex items-center gap-4 rounded-xl border p-4 shadow-sm transition-colors"
                 >
                   <PlayerImage

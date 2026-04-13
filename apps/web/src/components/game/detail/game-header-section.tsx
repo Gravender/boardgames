@@ -101,7 +101,7 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
 
               <div className="flex items-center gap-2">
                 <Link
-                  href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/stats`}
+                  href={`/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/stats`}
                   className={buttonVariants({
                     variant: "outline",
                     size: "sm",
@@ -132,7 +132,7 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                         <DropdownMenuItem
                           render={
                             <Link
-                              href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/edit`}
+                              href={`/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/edit`}
                             >
                               <PencilIcon className="mr-2 h-4 w-4" />
                               Edit Game
@@ -142,7 +142,7 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                         <DropdownMenuItem
                           render={
                             <Link
-                              href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/roles`}
+                              href={`/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/roles`}
                             >
                               <UserCog className="mr-2 h-4 w-4" />
                               Edit Roles
@@ -156,7 +156,7 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                         {canEdit && <DropdownMenuSeparator />}
                         <DropdownMenuItem
                           render={
-                            <Link href={`/dashboard/games/${game.id}/share`}>
+                            <Link href={`/games/${game.id}/share`}>
                               <Share2 className="mr-2 h-4 w-4" />
                               Share Game
                             </Link>

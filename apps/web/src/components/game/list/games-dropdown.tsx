@@ -67,7 +67,7 @@ export function GamesDropDown({
               render={
                 <Link
                   prefetch={true}
-                  href={`/dashboard/games/${data.type === "shared" ? "shared/" : ""}${data.id}/edit`}
+                  href={`/games/${data.type === "shared" ? "shared/" : ""}${data.id}/edit`}
                   className="flex items-center gap-2"
                 >
                   <PencilIcon className="h-4 w-4" />
@@ -82,8 +82,8 @@ export function GamesDropDown({
                   prefetch={true}
                   href={
                     data.type === "shared"
-                      ? `/dashboard/games/shared/${data.id}/stats`
-                      : `/dashboard/games/${data.id}/stats`
+                      ? `/games/shared/${data.id}/stats`
+                      : `/games/${data.id}/stats`
                   }
                   className="flex items-center gap-2"
                 >
@@ -104,7 +104,7 @@ export function GamesDropDown({
                   render={
                     <Link
                       prefetch={true}
-                      href={`/dashboard/games/${data.id}/share`}
+                      href={`/games/${data.id}/share`}
                       className="flex items-center gap-2"
                     >
                       <Link2Icon className="h-4 w-4" />

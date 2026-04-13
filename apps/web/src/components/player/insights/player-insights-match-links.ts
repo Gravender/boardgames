@@ -5,9 +5,9 @@ type PlayerIdentity =
 
 export const insightPlayerProfileHref = (p: PlayerIdentity): string => {
   if (p.type === "original") {
-    return `/dashboard/players/${p.id}/stats`;
+    return `/players/${p.id}/stats`;
   }
-  return `/dashboard/players/shared/${p.sharedId}/stats`;
+  return `/players/shared/${p.sharedId}/stats`;
 };
 
 /** Any insight match row that carries enough fields to build a summary URL. */
@@ -18,12 +18,12 @@ type MatchEntryForInsightHref =
 export const insightMatchHref = (match: MatchEntryForInsightHref): string => {
   if (match.type === "shared") {
     if (match.game.type === "shared") {
-      return `/dashboard/games/shared/${match.game.sharedGameId}/${match.sharedMatchId}/summary`;
+      return `/games/shared/${match.game.sharedGameId}/${match.sharedMatchId}/summary`;
     }
     return "";
   }
   if (match.game.type === "shared") {
     return "";
   }
-  return `/dashboard/games/${match.game.id}/${match.matchId}/summary`;
+  return `/games/${match.game.id}/${match.matchId}/summary`;
 };

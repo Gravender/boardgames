@@ -52,7 +52,7 @@ test.describe("Match Summary - Teams", () => {
       },
     );
 
-    await page.goto(`/dashboard/games/${gameId}/${match.id}/summary`);
+    await page.goto(`/games/${gameId}/${match.id}/summary`);
 
     const resultsCard = page.locator('[data-testid="match-results"]');
     await expect(resultsCard).toBeVisible({ timeout: 15000 });
@@ -166,9 +166,7 @@ test.describe("Match Summary - Teams", () => {
       },
     );
 
-    await page.goto(
-      `/dashboard/games/${result2.gameId}/${result2.match.id}/summary`,
-    );
+    await page.goto(`/games/${result2.gameId}/${result2.match.id}/summary`);
 
     const resultsCard = page.locator('[data-testid="match-results"]');
     await expect(resultsCard).toBeVisible({ timeout: 15000 });

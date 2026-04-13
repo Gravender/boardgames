@@ -21,16 +21,16 @@ export const dashboardRouter = {
   getBreadCrumbs: protectedUserProcedure
     .input(
       z.object({
-        rootHref: z.string(),
         segments: z.array(z.string()),
       }),
     )
     .query(async ({ ctx, input }) => {
       const crumbs: { name: string; path: string }[] = [];
-      let href = input.rootHref;
+      let href = "";
 
       // static labels for non-ID, non-shared segments
       const STATIC: Record<string, string> = {
+        dashboard: "Dashboard",
         games: "Games",
         players: "Players",
         groups: "Groups",
@@ -49,7 +49,7 @@ export const dashboardRouter = {
 
       for (let i = 0; i < input.segments.length; i++) {
         const seg = input.segments[i]!;
-        href += `/${seg}`;
+        href = href ? `${href}/${seg}` : seg;
 
         if (
           i >= 2 &&

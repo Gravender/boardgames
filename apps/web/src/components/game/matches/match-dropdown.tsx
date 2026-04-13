@@ -69,7 +69,7 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
               render={
                 <Link
                   prefetch={true}
-                  href={`/dashboard/games/${match.game.id}/${match.id}/edit`}
+                  href={`/games/${match.game.id}/${match.id}/edit`}
                   className="flex items-center gap-2"
                 >
                   <PencilIcon className="mr-2 h-4 w-4" />
@@ -83,7 +83,7 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
               render={
                 <Link
                   prefetch={true}
-                  href={`/dashboard/games/shared/${match.game.sharedGameId}/${match.id}/edit`}
+                  href={`/games/shared/${match.game.sharedGameId}/${match.id}/edit`}
                   className="flex items-center gap-2"
                 >
                   <PencilIcon className="mr-2 h-4 w-4" />
@@ -98,8 +98,8 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
                 prefetch={true}
                 href={
                   match.type === "shared"
-                    ? `/dashboard/games/shared/${match.game.sharedGameId}/${match.id}`
-                    : `/dashboard/games/${match.game.id}/${match.id}`
+                    ? `/games/shared/${match.game.sharedGameId}/${match.id}`
+                    : `/games/${match.game.id}/${match.id}`
                 }
                 className="flex items-center gap-2"
               >
@@ -115,8 +115,8 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
                   prefetch={true}
                   href={
                     match.type === "shared"
-                      ? `/dashboard/games/shared/${match.game.sharedGameId}/${match.id}/summary`
-                      : `/dashboard/games/${match.game.id}/${match.id}/summary`
+                      ? `/games/shared/${match.game.sharedGameId}/${match.id}/summary`
+                      : `/games/${match.game.id}/${match.id}/summary`
                   }
                   className="flex items-center gap-2"
                 >
@@ -132,7 +132,7 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
                 render={
                   <Link
                     prefetch={true}
-                    href={`/dashboard/games/${match.game.id}/${match.id}/share`}
+                    href={`/games/${match.game.id}/${match.id}/share`}
                     className="flex items-center gap-2"
                   >
                     <Link2Icon className="mr-2 h-4 w-4" />

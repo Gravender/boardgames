@@ -53,7 +53,7 @@ test.describe("Match Summary", () => {
       },
     );
 
-    await page.goto(`/dashboard/games/${gameId}/${match.id}/summary`);
+    await page.goto(`/games/${gameId}/${match.id}/summary`);
 
     // Wait for the results card to load
     const resultsCard = page.locator('[data-testid="match-results"]');
@@ -134,7 +134,7 @@ test.describe("Match Summary", () => {
       },
     );
 
-    await page.goto(`/dashboard/games/${gameId}/${match.id}/summary`);
+    await page.goto(`/games/${gameId}/${match.id}/summary`);
 
     const resultsCard = page.locator('[data-testid="match-results"]');
     await expect(resultsCard).toBeVisible({ timeout: 15000 });
@@ -206,9 +206,7 @@ test.describe("Match Summary", () => {
     );
 
     // Navigate to Match 2 summary
-    await page.goto(
-      `/dashboard/games/${result2.gameId}/${result2.match.id}/summary`,
-    );
+    await page.goto(`/games/${result2.gameId}/${result2.match.id}/summary`);
 
     const resultsCard = page.locator('[data-testid="match-results"]');
     await expect(resultsCard).toBeVisible({ timeout: 15000 });
@@ -311,7 +309,7 @@ test.describe("Match Summary", () => {
       },
     );
 
-    await page.goto(`/dashboard/games/${gameId}/${match.id}/summary`);
+    await page.goto(`/games/${gameId}/${match.id}/summary`);
 
     const resultsCard = page.locator('[data-testid="match-results"]');
     await expect(resultsCard).toBeVisible({ timeout: 15000 });
@@ -366,9 +364,7 @@ test.describe("Match Summary", () => {
       winners: [{ id: firstPlayer.baseMatchPlayerId }],
     });
 
-    await page.goto(
-      `/dashboard/games/${result.gameId}/${result.match.id}/summary`,
-    );
+    await page.goto(`/games/${result.gameId}/${result.match.id}/summary`);
 
     const resultsCard = page.locator('[data-testid="match-results"]');
     await expect(resultsCard).toBeVisible({ timeout: 15000 });

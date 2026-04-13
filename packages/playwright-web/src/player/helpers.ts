@@ -33,7 +33,7 @@ export function playerAriaText(playerName: string) {
   const temp = `
       - listitem:
         - 'link "${playerName} Game: Last Played:"':
-          - /url: //dashboard/players/\\d+/stats/
+          - /url: //players/\\d+/stats/
           - heading "${playerName}" [level=2]
         - button "0"
         - button "Open menu"

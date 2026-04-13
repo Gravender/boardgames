@@ -110,7 +110,7 @@ export const GroupDropdown = ({
                 <DropdownMenuItem
                   render={
                     <Link
-                      href={`/dashboard/groups/${group.id}`}
+                      href={`/groups/${group.id}`}
                       prefetch={true}
                       className="flex items-center gap-2"
                     >
