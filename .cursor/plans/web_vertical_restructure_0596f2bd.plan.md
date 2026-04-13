@@ -1,21 +1,21 @@
 ---
 name: Web vertical restructure
-overview: Restructure `apps/web/src` around domain **verticals** under `src/features/<name>/` (TkDodo-style colocation). Execution is split into **four phases** (leaf/shared, core domains, cleanup/docs, **App Router `(auth)` shell + flat URLs**: `/dashboard` = home only; `/games`, `/players`, …). **Shared UI policy**: standardize destructive/delete confirmation on `ConfirmDeleteDialog` and consolidate duplicate `AlertDialog` flows in Phase 1. See body for details.
+overview: Organize `apps/web` per Next.js App Router project structure (https://nextjs.org/docs/app/getting-started/project-structure). **No** `src/features/`. **Shared** code in `src/components/` and `src/hooks/`; route-local UI in **`_components`** (private folders) under segments. **Route groups** `(auth)`; **`layout`** / **`page`** files. Four phases + ConfirmDeleteDialog consolidation. See body.
 todos:
-  - id: define-vertical-map
-    content: Finalize per-file mapping into features/* (shell/shared/account/root components); blocks Phase 1.
+  - id: define-route-colocation-map
+    content: Finalize which modules stay in src/components and src/hooks vs app/.../_components per route (Next.js private folders); blocks Phase 1.
     status: pending
   - id: consolidate-destructive-dialogs
-    content: "Phase 1: refactor inline AlertDialog delete flows to shared ConfirmDeleteDialog; relocate with features/shared."
+    content: "Phase 1: refactor inline AlertDialog delete flows to shared ConfirmDeleteDialog; keep confirm dialog under src/components."
     status: pending
   - id: plan-phase-1
-    content: "Execute Phase 1 (leaf + forms/shell/shared); see Phased plans table."
+    content: "Execute Phase 1 (shared foundations + route colocation for leaf domains); see Phased plans table."
     status: pending
   - id: plan-phase-2
-    content: "Execute Phase 2 (game + match + player in one PR); see Phased plans table."
+    content: "Execute Phase 2 (game + match + player toward route colocation); see Phased plans table."
     status: pending
   - id: plan-phase-3
-    content: "Execute Phase 3 (delete old trees, update skills/docs)."
+    content: "Execute Phase 3 (update skills/docs; sweep stale path references)."
     status: pending
   - id: plan-phase-4
     content: "Execute Phase 4: (auth) shell; /dashboard = overview only; /games /players etc.; redirects from old /dashboard/* paths."
@@ -23,24 +23,31 @@ todos:
 isProject: false
 ---
 
-# Vertical codebase restructure (web + skills)
+# Route colocation + shared roots (web + skills)
+
+**Next.js reference (canonical)**: Follow [**Project structure and organization**](https://nextjs.org/docs/app/getting-started/project-structure) in the App Router docs — folder/file conventions, **colocation**, **private folders** (`_folderName`), **route groups** (`(folderName)`), dynamic segments (`[param]`), and the **`src` directory** option (this app uses `apps/web/src/app`).
 
 **Canonical location**: This umbrella and the four phase plans live in the monorepo under [`.cursor/plans/`](.) (same directory as this file).
 
-| Doc                                                                                     | Role                                                                   |
-| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| [web_vertical_restructure_0596f2bd.plan.md](web_vertical_restructure_0596f2bd.plan.md)  | Umbrella (this file)                                                   |
-| [Phase 1 — leaf + shared](web_vertical_restructure_phase1_leaf_and_shared.plan.md)      | Leaf verticals, forms, shell, shared, destructive-dialog consolidation |
-| [Phase 2 — core domains](web_vertical_restructure_phase2_core_domains.plan.md)          | game + match + player                                                  |
-| [Phase 3 — cleanup + docs](web_vertical_restructure_phase3_cleanup_and_docs.plan.md)    | Remove old trees, skills, CLAUDE, rules                                |
-| [Phase 4 — auth shell + URLs](web_vertical_restructure_phase4_auth_route_group.plan.md) | `(auth)` layout, flat `/games` routes, redirects                       |
+| Doc                                                                                     | Role                                                                        |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [web_vertical_restructure_0596f2bd.plan.md](web_vertical_restructure_0596f2bd.plan.md)  | Umbrella (this file)                                                        |
+| [Phase 1 — leaf + shared](web_vertical_restructure_phase1_leaf_and_shared.plan.md)      | Shared foundations, destructive-dialog consolidation, leaf route colocation |
+| [Phase 2 — core domains](web_vertical_restructure_phase2_core_domains.plan.md)          | game + match + player toward `games/.../_components` + hooks cleanup        |
+| [Phase 3 — cleanup + docs](web_vertical_restructure_phase3_cleanup_and_docs.plan.md)    | Skills, CLAUDE, rules; path sweep                                           |
+| [Phase 4 — auth shell + URLs](web_vertical_restructure_phase4_auth_route_group.plan.md) | `(auth)` layout, flat `/games` routes, redirects                            |
 
-## Principles (from the blog)
+## Principles (aligned with Next.js docs)
 
-- **Group by functionality** (“verticals”), not by file kind: a game-related hook should live next to game UI, not in a global `hooks/queries` tree ([TkDodo, _The Vertical Codebase_](https://tkdodo.eu/blog/the-vertical-codebase)).
-- **Colocate** components, hooks, types, and small helpers that change together; reserve [`packages/ui`](../../packages/ui) for reusable primitives and [`@board-games/ui`](../../packages/ui) imports (already aligned with “design system” in the article).
-- **Cross-route shared product UI** (sidebar, nav, shared form field helpers) becomes its **own vertical** when it is not “generic UI” — same idea as Sentry’s `PageFilters` example in the post.
-- **Routes stay thin**: keep using `app/**/_components` for page-only UI; those files import from `~/features/...` (colocation at the route is already consistent with the blog).
+Docs summary: Next.js is **unopinionated** about naming beyond **special files** (`layout`, `page`, `loading`, `error`, `not-found`, `route`, etc.). It documents three broad strategies: (1) **store shared code outside `app`**, (2) shared folders **inside** `app`, (3) **split by feature or route** — global shared + segment-specific colocation. This plan uses **(1) + (3)**.
+
+- **Do not create `src/features/`**. Shared application code lives under **`src/components`**, **`src/hooks`**, and other `src/*` roots ([`src` folder](https://nextjs.org/docs/app/api-reference/file-conventions/src-folder)), with **`src/app`** holding the App Router tree.
+- **Route segments** map to URL paths; only a **`page.tsx`** or **`route.ts`** makes a segment publicly addressable. Other files colocated in a segment are **not** sent as routes by default ([colocation](https://nextjs.org/docs/app/getting-started/project-structure#colocation)).
+- **Private folders** (`_folderName`) opt a tree out of the routing system explicitly. The docs example is `app/blog/_components/Post.tsx` — **not routable**; safe for UI utilities. **Prefer `_components`** for route-local widgets (matches the doc pattern and avoids clashes with future special file names). Optional `_lib` for segment-local helpers is consistent with the same page.
+- **Route groups** `(folderName)` organize layouts and omit the folder from the URL ([route groups](https://nextjs.org/docs/app/api-reference/file-conventions/route-groups)). Phase 4’s **`(auth)`** group follows this: shared authenticated **shell** in `app/(auth)/layout.tsx` without adding `/auth` to URLs.
+- **Dynamic routes** use `[segment]` (and optional catch‑all / optional catch‑all per docs). Example colocation: `src/app/(auth)/games/[id]/matches/[matchId]/_components/...` — adjust segment names to match this repo’s folders.
+- **Shared across many routes** (sidebar, confirm dialogs, spinners, form helpers) stays in **`src/components`**; design primitives in **`@board-games/ui`**. **Hooks** used from multiple routes stay in **`src/hooks/`**; move a hook beside a route only if it is **single-route** private (e.g. next to `_components` or `_lib` in that segment).
+- **`app/**`integration**:`page.tsx`/`layout.tsx`import from`~/components/...`, `~/hooks/...`, and **relative** imports from `./\_components/...`/`./\_lib/...`.
 
 ## Generic patterns (destructive confirm, similar dialogs)
 
@@ -49,10 +56,10 @@ The app already has [`apps/web/src/components/confirm-delete-dialog.tsx`](../../
 **Conventions**
 
 - **Prefer the shared component** over ad-hoc `AlertDialog` trees in feature code for the same UX (title, description, Cancel, destructive confirm, loading on confirm). Today several call sites still use raw `AlertDialog` (e.g. some dropdowns and sheets); **Phase 1** should **refactor those** to `ConfirmDeleteDialog` (or a renamed **`ConfirmDestructiveDialog`** if you generalize copy beyond “Delete”) so behavior and a11y stay consistent.
-- **Naming**: keep one canonical export per concern (delete/destructive confirm, info modal, etc.); avoid duplicating near-identical wrappers in verticals.
-- **Where it lives after restructure**: under **`features/shared/components/`** (co-located with tests), imported as `~/features/shared/components/confirm-delete-dialog`. **Optional later**: move to [`packages/ui`](../../packages/ui) if you want the same API in **`apps/native`** without copy-paste — only if the API stays presentation-only (no web-only assumptions).
+- **Naming**: keep one canonical export per concern (delete/destructive confirm, info modal, etc.); avoid duplicating near-identical wrappers beside individual routes.
+- **Where it lives**: **`src/components/`** (e.g. `~/components/confirm-delete-dialog`), not under a new `features/` tree. **Optional later**: move to [`packages/ui`](../../packages/ui) if you want the same API in **`apps/native`** without copy-paste — only if the API stays presentation-only (no web-only assumptions).
 
-**Similar future patterns**: same idea — one shared component for each recurring shape (e.g. “info” explainer modal → existing `feature-info-modal` pattern), not N slight variations per vertical.
+**Similar future patterns**: same idea — one shared component for each recurring shape (e.g. “info” explainer modal → existing `feature-info-modal` pattern), not N slight variations per route.
 
 ## Target layout (`apps/web/src`)
 
@@ -66,95 +73,86 @@ flowchart TB
     lib[lib]
     test[test]
   end
-  subgraph features [features verticals]
-    game[features/game]
-    match[features/match]
-    player[features/player]
-    group[features/group]
-    other[features/location friend forms shell shared account]
+  subgraph shared [Shared app layer]
+    components[src/components]
+    hooks[src/hooks]
   end
-  app[app router pages layouts]
-  app --> features
-  app --> infra
-  features --> infra
-  features --> packages_ui["@board-games/ui"]
+  subgraph app [App Router src/app]
+    games_r[games/.../_components]
+    other_r[other segments _components _lib]
+  end
+  app_router[app router pages layouts]
+  app_router --> shared
+  app_router --> infra
+  shared --> infra
+  shared --> packages_ui["@board-games/ui"]
+  games_r --> shared
+  other_r --> shared
 ```
 
-**Proposed vertical folders** (map from current [`apps/web/src/components`](../../apps/web/src/components) + [`apps/web/src/hooks`](../../apps/web/src/hooks)):
+**What moves where (conceptual)**
 
-| Vertical                           | Contents (from today)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `features/game`                    | `components/game/**`, `hooks/queries/game`, `hooks/mutations/game`, `hooks/game-stats/**`                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `features/match`                   | `components/match/**`, `hooks/queries/match`, `hooks/mutations/match`                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `features/player`                  | `components/player/**`, `hooks/queries/player`, `hooks/mutations/player`, `hooks/invalidate/player.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `features/group`                   | `components/group/**`, `hooks/queries/group`, `hooks/mutations/group`                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `features/location`                | `components/location/**`, `hooks/queries/location`, `hooks/mutations/location`, `hooks/invalidate/location.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `features/friend`                  | `components/friend/**`, `hooks/queries`/`mutations` under `friend` if present                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `features/account` (name flexible) | `components/better-auth/**` + settings-related auth UI                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `features/forms`                   | `components/form/**`, `hooks/form.tsx`, `hooks/form-context.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `features/shell`                   | App chrome: e.g. `app-sidebar`, `nav-*`, `breadcrumbs`, theme toggle/provider, marketing/auth forms currently at `components/*` that only serve layout/auth entry (`signup-form`, `reset-password-form`, etc.) — exact file list to be finalized when moving so nothing cross-imported is split awkwardly                                                                                                                                                                                                                                         |
-| `features/shared`                  | Cross-feature widgets not suitable for `packages/ui`: includes **destructive confirmation** ([`confirm-delete-dialog`](../../apps/web/src/components/confirm-delete-dialog.tsx)), `feature-info-modal`, `formatted-date`, `spinner`, `debounced-checkbox`, `number-input`, `player-image`, `color-picker`, table helpers — **only** if truly shared; otherwise push into the closest vertical. **Policy**: new delete/destructive flows use the shared confirm component; do not add new one-off `AlertDialog` compositions for the same pattern. |
+| Kind                                                             | Location                                                                                                                                                                          |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shared widgets, layout chrome helpers, cross-route tables/modals | `src/components/**`                                                                                                                                                               |
+| Shared tRPC/React Query modules used from multiple routes        | `src/hooks/**` (keep existing `queries/`, `mutations/`, `invalidate/`, etc.)                                                                                                      |
+| UI only used by one route subtree                                | `src/app/.../<segment>/_components/**` (nested per dynamic segment; **private folder** per [docs](https://nextjs.org/docs/app/getting-started/project-structure#private-folders)) |
+| Segment-only helpers (optional)                                  | `src/app/.../_lib/**` (same private-folder pattern as `_components`)                                                                                                              |
 
-**Inside each vertical**, keep a predictable shape (still “vertical,” not a flat dump):
+**Path aliases**: [`apps/web/tsconfig.json`](../../apps/web/tsconfig.json) keeps `"~/*": ["./src/*"]` so shared imports stay `~/components/...`, `~/hooks/...`. Route-local imports use **relative** paths from `page.tsx` / `layout.tsx` into `./_components/...` and `./_lib/...`.
 
-- `features/<name>/components/**` — current subtree from `components/<name>/`
-- `features/<name>/hooks/queries`, `hooks/mutations`, `hooks/invalidate` as needed — mirror today’s hook layout **inside** the vertical
-
-**Unchanged path aliases**: [`apps/web/tsconfig.json`](../../apps/web/tsconfig.json) keeps `"~/*": ["./src/*"]` so imports become `~/features/game/components/...`, `~/features/game/hooks/queries/...` (no new alias required).
-
-**Delete empty trees** after migration: remove top-level `src/components` and `src/hooks` once fully drained (or leave a temporary `README` only if you stage migration — prefer not).
+**Do not** delete `src/components` or `src/hooks` as an end goal — they remain the shared home.
 
 ## Migration approach (recommended)
 
-- **Order by dependency and size**: move smaller, leaf verticals first (`group`, `location`, `friend`), then `forms` + `shell` + `shared`, then heavy domains (`game`, `match`, `player`) where cross-imports are dense. Alternatively, a **single scripted pass** (codemod / bulk find-replace + `turbo run check --filter=web`) reduces “half old / half new” pain; choose based on how long you can keep a branch open.
+- **Order by dependency**: tighten shared patterns first (ConfirmDeleteDialog, shell imports), then move **leaf** route trees (group, location, friend, …) toward colocated components, then **game / match / player** (dense cross-imports — still one batch if possible).
 - **After each chunk**: `turbo run check --filter=web` and `bun run test:web` (Vitest aliases already match `~` → [`apps/web/vitest.config.ts`](../../apps/web/vitest.config.ts)).
-- **Import updates**: systematic replacement of `~/components/<domain>/` → `~/features/<domain>/components/` and `~/hooks/.../<domain>/` → `~/features/<domain>/hooks/...` (and fix relative imports inside moved files).
-- **Optional follow-up** (not required for structure): `eslint-plugin-boundaries` or similar to enforce “no deep imports into another vertical’s internals,” as mentioned in the blog — can be a separate task.
+- **Import updates**: route files import from `~/components/...` / `~/hooks/...` for shared code; from `./_components/...` (and `./_lib/...` if used) for colocated UI. When extracting from a large `src/components/<domain>/` folder, move files into the **closest** route segment that owns them; leave only genuinely shared pieces under `src/components`.
 
 ## Dealing with cross-imports (game / match / player)
 
-The problem is not TypeScript itself — it is **avoiding a long-lived hybrid** where some imports use `~/components/game/...` and others already use `~/features/match/...`, which makes reviews and grep-based fixes error-prone.
+The problem is not TypeScript itself — it is **avoiding a long-lived hybrid** where some imports use old paths and others use new colocated paths.
 
 **Preferred approach: migrate the trio in one atomic change**
 
-- Move `features/game`, `features/match`, and `features/player` (components + hooks) **in the same branch / PR**, then run one bulk import rewrite for all three.
-- All cross-imports between them become stable `~/features/<x>/...` → `~/features/<y>/...` paths in a single step. `tsc` and tests validate the whole graph at once.
+- Move game/match/player **route-specific** UI into the appropriate `games/.../_components` (and sibling routes such as `players/...` where applicable) **together** with hook import updates, then run one bulk import rewrite.
+- Shared pieces that **multiple** game routes use stay in `src/components` or stay in `src/hooks` until there is a clear reason to split.
 
 **If you must split work across time**
 
-- **Do not** leave only one of the three on the old `components/` tree while the others moved — that maximizes confusing cross-boundary imports.
-- Acceptable split: complete **Phase 1** (everything except game/match/player) and merge; repo stays green with old paths for the trio only. Then **Phase 2** does game+match+player together (still one PR for the trio).
-- **Avoid** (unless unavoidable): temporary re-export shims under `src/components/<domain>/index.ts` pointing at `features/` — they work but add noise and a second cleanup pass; prefer the two-phase split above instead.
+- **Do not** leave only one of the three domains half-migrated — that maximizes confusing cross-boundary imports.
+- Acceptable: finish **Phase 1** (shared + leaf routes) and merge; then **Phase 2** does game+match+player in one PR.
 
-**Mechanical scale (~200 components, ~47 hooks)**
+**Mechanical scale**
 
-- Treat rewrites as **scripted or codemod-scale** (bulk find-replace with careful patterns, or `ts-morph`), not hand-editing each file.
-- Let **`turbo run check --filter=web`** and **`bun run test:web`** be the gate; fix forward until green.
+- Treat rewrites as **scripted or codemod-scale** where possible; let **`turbo run check --filter=web`** and **`bun run test:web`** be the gate.
 
 ## Phased plans (split into multiple deliverables)
 
 This umbrella plan stays the **architecture reference**. Split execution into **separate plan files** (or PRs) so each merge is reviewable and main stays green.
 
-| Phase       | Scope                                                                                                                                                                                                                                                                                                                                                                                | Plan file (monorepo)                                                                                                 |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| **Phase 1** | `group`, `location`, `friend`, `account` (better-auth), `forms`, `shell`, `shared` — verticals with **few imports from** game/match/player, plus shared foundations other features will import. **Include**: consolidate inline delete/`AlertDialog` flows into [`ConfirmDeleteDialog`](../../apps/web/src/components/confirm-delete-dialog.tsx) where applicable as `shared` moves. | [web_vertical_restructure_phase1_leaf_and_shared.plan.md](web_vertical_restructure_phase1_leaf_and_shared.plan.md)   |
-| **Phase 2** | **`game` + `match` + `player`** together (components + hooks); bulk import updates for internal cross-imports and every consumer                                                                                                                                                                                                                                                     | [web_vertical_restructure_phase2_core_domains.plan.md](web_vertical_restructure_phase2_core_domains.plan.md)         |
-| **Phase 3** | Remove emptied `src/components` and `src/hooks`; refresh **skills/docs** ([`.cursor/skills/web-app-src-conventions/SKILL.md`](../../.cursor/skills/web-app-src-conventions/SKILL.md), [`CLAUDE.md`](../../CLAUDE.md), [`.cursor/rules/tanstack-form-subscribe-selector.mdc`](../../.cursor/rules/tanstack-form-subscribe-selector.mdc)); optional `rg` sweep for stale paths         | [web_vertical_restructure_phase3_cleanup_and_docs.plan.md](web_vertical_restructure_phase3_cleanup_and_docs.plan.md) |
-| **Phase 4** | **App Router: `(auth)` shell + flatten URLs** — sidebar layout on `app/(auth)/layout.tsx`; **`/dashboard` = overview only**; product routes at **`/games`, `/players`, `/groups`, …** (not under `/dashboard`). See [Phase 4 details](#phase-4-authenticated-app-shell-auth-route-group).                                                                                            | [web_vertical_restructure_phase4_auth_route_group.plan.md](web_vertical_restructure_phase4_auth_route_group.plan.md) |
+| Phase       | Scope                                                                                                                                                                                                                                                                                                                       | Plan file (monorepo)                                                                                                 |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Phase 1** | Shared foundations (destructive dialog consolidation, shell organization under `src/components`), leaf domains colocated under their routes — **not** `game`/`match`/`player` yet.                                                                                                                                          | [web_vertical_restructure_phase1_leaf_and_shared.plan.md](web_vertical_restructure_phase1_leaf_and_shared.plan.md)   |
+| **Phase 2** | **`game` + `match` + `player`**: move toward `games/.../_components` (and related route folders), keep shared hooks in `src/hooks` unless truly page-private                                                                                                                                                                | [web_vertical_restructure_phase2_core_domains.plan.md](web_vertical_restructure_phase2_core_domains.plan.md)         |
+| **Phase 3** | Update **skills/docs** ([`.cursor/skills/web-app-src-conventions/SKILL.md`](../../.cursor/skills/web-app-src-conventions/SKILL.md), [`CLAUDE.md`](../../CLAUDE.md), [`.cursor/rules/tanstack-form-subscribe-selector.mdc`](../../.cursor/rules/tanstack-form-subscribe-selector.mdc)); `rg` sweep for stale path references | [web_vertical_restructure_phase3_cleanup_and_docs.plan.md](web_vertical_restructure_phase3_cleanup_and_docs.plan.md) |
+| **Phase 4** | **App Router: `(auth)` shell + flatten URLs** — sidebar layout on `app/(auth)/layout.tsx`; **`/dashboard` = overview only**; product routes at **`/games`, `/players`, `/groups`, …** (not under `/dashboard`). See [Phase 4 details](#phase-4-authenticated-app-shell-auth-route-group).                                   | [web_vertical_restructure_phase4_auth_route_group.plan.md](web_vertical_restructure_phase4_auth_route_group.plan.md) |
 
-**Dependency rule**: Phase 1 should move **`forms`** and **`shared`** (or equivalent) **before** Phase 2 so game/match/player code that imports field helpers and small widgets already targets `~/features/forms/...` and `~/features/shared/...`, reducing churn inside Phase 2.
+**Dependency rule**: Phase 1 should land **ConfirmDeleteDialog** consolidation and stable **shell** paths under `src/components` before Phase 2 churn on game/match/player.
 
-**Phase 4 dependency**: Prefer running after **Phase 1** (so `AppSidebar` / shell live under `~/features/shell/...`) and ideally after **Phase 3** so layout files do not still reference `~/components/...`. **URL change**: most paths move from `/dashboard/<segment>` to `/<segment>` — plan redirects (see Phase 4) for old links.
+**Phase 4 dependency**: Prefer running after **Phase 1** so `AppSidebar` / shell imports are stable, and after route moves where possible so layout files do not reference obsolete paths. **URL change**: most paths move from `/dashboard/<segment>` to `/<segment>` — plan redirects (see Phase 4) for old links.
 
-**Optional fifth item** (later): `eslint-plugin-boundaries` or barrels-only public APIs between verticals — not required for folder moves.
+**Optional later**: `eslint-plugin-boundaries` between `app/` and `src/components` — not required for folder moves.
 
 ## Phase 4: Authenticated app shell `(auth)` route group
+
+Per [Route groups](https://nextjs.org/docs/app/api-reference/file-conventions/route-groups): folders in parentheses **do not** appear in the URL; use them to share a **`layout.tsx`** across a subtree. **`layout`** wraps child segments ([layout convention](https://nextjs.org/docs/app/api-reference/file-conventions/layout)).
 
 **Problem today**: The sidebar + session gate live in [`apps/web/src/app/dashboard/layout.tsx`](../../apps/web/src/app/dashboard/layout.tsx). Almost all product routes are nested as **`/dashboard/games`, `/dashboard/players`, …**, so “dashboard” is both the **home overview** and the **parent prefix for the whole app**, which is noisy and deep.
 
 **Goals (two parts)**
 
-1. **Shell**: Add a **route group** [`app/(auth)/`](../../apps/web/src/app) (parentheses = **no extra URL segment**) whose **layout** owns the authenticated shell: `SidebarProvider`, `AppSidebar`, header with breadcrumbs + theme toggle, and the `session` check / `redirect("/")` when unauthenticated — i.e. lift the current `SidebarLayout` from [`dashboard/layout.tsx`](../../apps/web/src/app/dashboard/layout.tsx) into **`app/(auth)/layout.tsx`**.
+1. **Shell**: Add a **route group** [`src/app/(auth)/`](../../apps/web/src/app) (parentheses = **no extra URL segment**) whose **`layout.tsx`** owns the authenticated shell: `SidebarProvider`, `AppSidebar`, header with breadcrumbs + theme toggle, and the `session` check / `redirect("/")` when unauthenticated — i.e. lift the current `SidebarLayout` from [`dashboard/layout.tsx`](../../apps/web/src/app/dashboard/layout.tsx) into **`app/(auth)/layout.tsx`**.
 2. **Flat URLs**: Under `(auth)`, **only** the overview uses the `/dashboard` segment. Feature routes become **top-level paths** next to it, not children of `dashboard`:
 
 | Current (typical)                                                                                                                               | Target                                                                                                                                                                                                   |
@@ -164,20 +162,20 @@ This umbrella plan stays the **architecture reference**. Split execution into **
 | `/dashboard/players`, `/dashboard/players/...`                                                                                                  | `/players`, `/players/...`                                                                                                                                                                               |
 | `/dashboard/groups`, `/dashboard/friends`, `/dashboard/locations`, `/dashboard/calendar`, `/dashboard/share-requests`, `/dashboard/settings`, … | `/groups`, `/friends`, `/locations`, `/calendar`, `/share-requests`, `/settings`, … (same path suffixes and dynamic segments after the first segment)                                                    |
 
-**Filesystem layout (illustrative)**
+**Filesystem layout (illustrative)** — paths under `apps/web/src/app/`
 
-- `app/(auth)/layout.tsx` — sidebar shell + session gate.
-- `app/(auth)/dashboard/page.tsx` (+ `app/(auth)/dashboard/_components/`) — **only** dashboard overview widgets.
-- `app/(auth)/games/**`, `app/(auth)/players/**`, `app/(auth)/groups/**`, … — moved from today’s `app/dashboard/<segment>/**` (not nested under a `dashboard` folder in the URL).
+- `(auth)/layout.tsx` — sidebar shell + session gate ([`layout` file](https://nextjs.org/docs/app/api-reference/file-conventions/layout)).
+- `(auth)/dashboard/page.tsx` (+ `(auth)/dashboard/_components/`) — **only** dashboard overview widgets; **`page`** exposes `/dashboard` ([`page` file](https://nextjs.org/docs/app/api-reference/file-conventions/page)).
+- `(auth)/games/**`, `(auth)/players/**`, `(auth)/groups/**`, … — moved from today’s `dashboard/<segment>/**` (URL segments no longer under `/dashboard/...`).
 
 **Concrete steps**
 
-1. Add **`app/(auth)/layout.tsx`** with the same shell behavior as today’s dashboard layout (imports from `~/features/shell/...` after vertical restructure).
+1. Add **`src/app/(auth)/layout.tsx`** with the same shell behavior as today’s dashboard layout (imports from `~/components/...` for shell pieces after restructure).
 2. **Split** the current [`app/dashboard`](../../apps/web/src/app/dashboard) tree:
-   - Keep **`dashboard/page.tsx`** and **`dashboard/_components/`** under `app/(auth)/dashboard/` (overview only).
-   - **Move** each other first-level segment (`games`, `players`, `groups`, `locations`, `friends`, `calendar`, `share-requests`, `settings`, …) to **`app/(auth)/<segment>/`** at the **root of the group** (siblings of `dashboard/`), so URLs flatten as in the table above.
+   - Keep **`dashboard/page.tsx`** and **`dashboard/_components/`** under `src/app/(auth)/dashboard/` (overview only).
+   - **Move** each other first-level segment (`games`, `players`, `groups`, `locations`, `friends`, `calendar`, `share-requests`, `settings`, …) to **`src/app/(auth)/<segment>/`** at the **root of the group** (siblings of `dashboard/`), so URLs flatten as in the table above. Preserve each segment’s **`_components`** (and other private folders) when moving.
 3. **Remove** the old `app/dashboard/layout.tsx` after the shell lives on `(auth)/layout.tsx` (no nested duplicate shell on `dashboard`).
-4. **Update every navigation surface**: [`app-sidebar`](../../apps/web/src/components/app-sidebar.tsx) (or `~/features/shell/...`), [`nav-secondary`](../../apps/web/src/components/nav-secondary.tsx), breadcrumbs, [`linkFormatting`](../../apps/web/src/utils/linkFormatting.ts), in-app `Link`/`router.push`, and **metadata** / **openGraph** URLs if they hardcode `/dashboard`.
+4. **Update every navigation surface**: [`app-sidebar`](../../apps/web/src/components/app-sidebar.tsx), [`nav-secondary`](../../apps/web/src/components/nav-secondary.tsx), breadcrumbs, [`linkFormatting`](../../apps/web/src/utils/linkFormatting.ts), in-app `Link`/`router.push`, and **metadata** / **openGraph** URLs if they hardcode `/dashboard`.
 5. **Backwards compatibility**: Add **redirects** (e.g. in [`next.config.ts`](../../apps/web/next.config.ts) `redirects` or middleware) from `/dashboard/games` → `/games` (and likewise for other moved prefixes) so old bookmarks and shared links keep working during rollout.
 6. **Audit**: [`middleware.ts` / `proxy`](../../apps/web/src), auth callbacks, and any **string** checks for paths starting with `/dashboard` that should now allow `/games`, `/players`, etc.
 7. **Out of scope**: Unauthenticated routes (`/login`, `/sign-up`, …) stay **outside** `(auth)`. The group name `(auth)` means **authenticated session + app chrome**; use `(app)` or `(main)` if you prefer to avoid confusion with “auth pages.”
@@ -188,16 +186,16 @@ This umbrella plan stays the **architecture reference**. Split execution into **
 
 ## Docs and skills to update
 
-| File                                                                                                             | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`.cursor/skills/web-app-src-conventions/SKILL.md`](../../.cursor/skills/web-app-src-conventions/SKILL.md)       | Rewrite conventions: `features/<vertical>/` colocation; `packages/ui` vs `features/*` vs route `_components`; updated import examples; remove “hooks must live in `src/hooks`” rule; **add**: destructive/delete confirmation → shared `ConfirmDeleteDialog` from `~/features/shared/...`, not new raw `AlertDialog` copies; **add (Phase 4)**: `app/(auth)/layout.tsx` = shell; **`/dashboard`** = overview only; feature routes at **`/games`, `/players`, …** (not `/dashboard/...`) |
-| [`CLAUDE.md`](../../CLAUDE.md)                                                                                   | Update “UI Components” bullet: app-specific UI under `apps/web/src/features/...` instead of only `apps/web/src/components/`                                                                                                                                                                                                                                                                                                                                                             |
-| [`.cursor/rules/tanstack-form-subscribe-selector.mdc`](../../.cursor/rules/tanstack-form-subscribe-selector.mdc) | Point the canonical example at the new path (e.g. `features/match/components/.../selector.tsx`)                                                                                                                                                                                                                                                                                                                                                                                         |
+| File                                                                                                             | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`.cursor/skills/web-app-src-conventions/SKILL.md`](../../.cursor/skills/web-app-src-conventions/SKILL.md)       | Document alignment with [Next.js project structure](https://nextjs.org/docs/app/getting-started/project-structure): **no** `src/features/`; shared `src/components` + `src/hooks`; route-local **`_components`** / optional **`_lib`**; `packages/ui` vs app components; **ConfirmDeleteDialog** from `~/components/...`; **Phase 4**: `(auth)` route group + `layout.tsx`; **`/dashboard`** = overview only; feature routes at **`/games`, `/players`, …** |
+| [`CLAUDE.md`](../../CLAUDE.md)                                                                                   | UI: shared under `apps/web/src/components` and `apps/web/src/hooks`; route-specific under `src/app/.../_components` per Next.js private-folder colocation                                                                                                                                                                                                                                                                                                   |
+| [`.cursor/rules/tanstack-form-subscribe-selector.mdc`](../../.cursor/rules/tanstack-form-subscribe-selector.mdc) | Point the canonical example at a real path after colocation (e.g. under `src/app/(auth)/games/.../_components/...`)                                                                                                                                                                                                                                                                                                                                         |
 
-**Search after edits**: `rg 'apps/web/src/components|~/components/'` across repo to catch stray references in rules or docs.
+**Search after edits**: `rg 'src/features|~/features/'` across repo to catch stray references in rules or docs.
 
 ## Out of scope / non-goals
 
 - **Native app** (`apps/native`): unchanged unless you explicitly want the same naming there later.
-- **New packages per vertical** in the monorepo: the blog suggests package boundaries; this plan stays within `apps/web` unless you later promote a vertical to `packages/*` with `exports` (larger change).
+- **New packages per domain** in the monorepo: optional later promotion to `packages/*` with `exports` — larger change.
 - **Fixing the typo** `app/dashboard/share-requests/[id]/_componenets/` — optional cleanup while touching those paths.

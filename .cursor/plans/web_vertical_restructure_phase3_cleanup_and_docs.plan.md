@@ -1,35 +1,37 @@
 ---
 name: Web vertical restructure — Phase 3 (cleanup + docs)
-overview: Remove emptied src/components and src/hooks when safe; update Cursor skill, CLAUDE.md, and tanstack-form rule; sweep for stale path references.
+overview: Update skills/CLAUDE/rules to match Next.js project structure (https://nextjs.org/docs/app/getting-started/project-structure) — src/components, src/hooks, app/.../_components. Sweep stale paths.
 isProject: false
 umbrella: .cursor/plans/web_vertical_restructure_0596f2bd.plan.md
 ---
 
-# Phase 3: Remove old trees + documentation
+# Phase 3: Documentation + repository sweep
+
+**Next.js**: Documentation should cite [**Project structure and organization**](https://nextjs.org/docs/app/getting-started/project-structure) for **special files** (`layout`, `page`, …), **private folders**, **route groups**, and **colocation**.
 
 **Umbrella**: [web_vertical_restructure_0596f2bd.plan.md](./web_vertical_restructure_0596f2bd.plan.md) (canonical copy in this monorepo).
 
-Run this **after** Phases 1–2 so nothing still imports from legacy top-level `components/` or `hooks/` trees.
+Run this **after** Phases 1–2 so conventions match **Next.js-aligned** layout.
 
-## Cleanup
+## Cleanup (lightweight)
 
-1. Confirm `apps/web/src/components` is empty or only contains removable leftovers (e.g. empty `layout/`). Delete the directory if fully drained.
-2. Confirm `apps/web/src/hooks` is empty. Delete if fully drained.
-3. Move any stragglers (e.g. `render-smoke.test.tsx`) to an appropriate location such as [`apps/web/src/test/`](../../apps/web/src/test) if not already placed.
+1. Remove **empty** directories left after moves (if any); fix duplicate files.
+2. Ensure tests (e.g. `render-smoke.test.tsx`) live under agreed locations such as [`apps/web/src/test/`](../../apps/web/src/test).
+3. **Do not** delete **`src/components`** or **`src/hooks`** — they remain shared roots per the [**store outside `app`**](https://nextjs.org/docs/app/getting-started/project-structure#store-project-files-outside-of-app) strategy.
 
 ## Documentation and rules
 
-| File                                                                                                             | Action                                                                                                                                                                                                                                       |
-| ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`.cursor/skills/web-app-src-conventions/SKILL.md`](../../.cursor/skills/web-app-src-conventions/SKILL.md)       | Replace `src/components` + split `src/hooks` guidance with `features/<vertical>/` colocation; `packages/ui` vs `features/*` vs route `_components`; `ConfirmDeleteDialog` from `~/features/shared/...`; note Phase 4 routing when that lands |
-| [`CLAUDE.md`](../../CLAUDE.md)                                                                                   | Update app UI location to `apps/web/src/features/...`                                                                                                                                                                                        |
-| [`.cursor/rules/tanstack-form-subscribe-selector.mdc`](../../.cursor/rules/tanstack-form-subscribe-selector.mdc) | Point canonical example to `~/features/match/components/.../selector.tsx` (or actual path after Phase 2)                                                                                                                                     |
+| File                                                                                                             | Action                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`.cursor/skills/web-app-src-conventions/SKILL.md`](../../.cursor/skills/web-app-src-conventions/SKILL.md)       | Link [Next.js project structure](https://nextjs.org/docs/app/getting-started/project-structure); **no** `src/features/`; **`src/components`** + **`src/hooks`**; **`src/app/.../_components`** / **`_lib`**; `packages/ui`; **`ConfirmDeleteDialog`**; Phase 4 `(auth)` + URLs |
+| [`CLAUDE.md`](../../CLAUDE.md)                                                                                   | Shared `apps/web/src/components` + `apps/web/src/hooks`; route-local `src/app/.../_components`                                                                                                                                                                                 |
+| [`.cursor/rules/tanstack-form-subscribe-selector.mdc`](../../.cursor/rules/tanstack-form-subscribe-selector.mdc) | Canonical example path under `src/app/.../_components/...` after colocation                                                                                                                                                                                                    |
 
 ## Repository sweep
 
 ```bash
-rg 'apps/web/src/components|~/components/' --glob '*.{md,mdc,tsx,ts}'
-rg '~/hooks/' apps/web
+rg 'src/features|~/features/' --glob '*.{md,mdc,tsx,ts}'
+rg 'apps/web/src/features' .
 ```
 
 Fix or remove stale references in docs, rules, and comments.
@@ -43,6 +45,6 @@ bun run test:web
 
 ## Merge criteria
 
-- No dangling imports to deleted `src/hooks` or `src/components` roots
 - Skill and CLAUDE updates committed
-- Grep for old path strings in `.cursor` and `CLAUDE.md` cleaned up
+- Grep for obsolete **`features/`** path strings in `.cursor` and `CLAUDE.md` cleaned up
+- Checks/tests green for `web`
