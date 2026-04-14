@@ -65,7 +65,7 @@ export function MatchImages({
 
   const posthog = usePostHog();
 
-  const { data: matchImages } = useMatchImages({ matchId });
+  const { data: matchImages = [] } = useMatchImages({ matchId });
   const deleteMatchImageMutation = useDeleteMatchImageMutation({
     matchId,
     onSuccess: () => {

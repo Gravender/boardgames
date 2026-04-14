@@ -7,102 +7,109 @@ import { renderWithProviders } from "~/test";
 import { CommentDialog } from "./CommentDialog";
 import { matchInputOriginal } from "./scoresheet-test-fixtures";
 
-const mutateMock = vi.fn(
-  (_vars: unknown, opts?: { onSuccess?: () => void }) => {
-    opts?.onSuccess?.();
-  },
-);
+const mutateMock = vi.fn(async () => {});
 
 vi.mock("~/hooks/mutations/match/scoresheet", () => ({
   useUpdateMatchCommentMutation: () => ({
     updateMatchCommentMutation: {
       mutate: mutateMock,
+      mutateAsync: mutateMock,
       isPending: false,
     },
   }),
 }));
 
+vi.mock("~/hooks/match/autosave/use-network-online", () => ({
+  useNetworkOnline: () => true,
+}));
+
 describe("CommentDialog", () => {
-  it("submits trimmed comment via mutation and closes the dialog", async () => {
+  it("autosaves trimmed comment after debounce", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      mutateMock.mockClear();
+
+      renderWithProviders(
+        <CommentDialog matchInput={matchInputOriginal} comment="old" canEdit />,
+      );
+
+      const commentBox = screen.getByRole("textbox", { name: "Comment" });
+      await user.clear(commentBox);
+      await user.type(commentBox, "  hello world  ");
+
+      vi.advanceTimersByTime(1500);
+
+      await waitFor(() => {
+        expect(mutateMock).toHaveBeenCalledWith({
+          match: matchInputOriginal,
+          comment: "hello world",
+        });
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("sends null when comment is cleared to whitespace after debounce", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      mutateMock.mockClear();
+
+      renderWithProviders(
+        <CommentDialog matchInput={matchInputOriginal} comment="x" canEdit />,
+      );
+
+      const commentBox = screen.getByRole("textbox", { name: "Comment" });
+      await user.clear(commentBox);
+      await user.type(commentBox, "   ");
+
+      vi.advanceTimersByTime(1500);
+
+      await waitFor(() => {
+        expect(mutateMock).toHaveBeenCalledWith({
+          match: matchInputOriginal,
+          comment: null,
+        });
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("saves immediately when Save is pressed before debounce elapses", async () => {
     const user = userEvent.setup();
     mutateMock.mockClear();
 
     renderWithProviders(
-      <CommentDialog matchInput={matchInputOriginal} comment="old" />,
+      <CommentDialog matchInput={matchInputOriginal} comment="old" canEdit />,
     );
-
-    await user.click(screen.getByRole("button", { name: /old/i }));
-
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Match Comment" }),
-    ).toBeVisible();
 
     const commentBox = screen.getByRole("textbox", { name: "Comment" });
     await user.clear(commentBox);
-    await user.type(commentBox, "  hello world  ");
+    await user.type(commentBox, "quick");
 
-    await user.click(screen.getByRole("button", { name: "Ok" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(mutateMock).toHaveBeenCalledWith(
-      {
-        match: matchInputOriginal,
-        comment: "hello world",
-      },
-      expect.any(Object),
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mutateMock).toHaveBeenCalledWith({
+      match: matchInputOriginal,
+      comment: "quick",
     });
   });
 
-  it("sends null when comment is cleared to whitespace", async () => {
-    const user = userEvent.setup();
-    mutateMock.mockClear();
-
+  it("does not expose an edit control when canEdit is false", () => {
     renderWithProviders(
-      <CommentDialog matchInput={matchInputOriginal} comment="x" />,
+      <CommentDialog
+        matchInput={matchInputOriginal}
+        comment="read only"
+        canEdit={false}
+      />,
     );
-
-    await user.click(screen.getByRole("button", { name: "x" }));
-
-    const commentBox = screen.getByRole("textbox", { name: "Comment" });
-    await user.clear(commentBox);
-    await user.type(commentBox, "   ");
-
-    await user.click(screen.getByRole("button", { name: "Ok" }));
-
-    expect(mutateMock).toHaveBeenCalledWith(
-      {
-        match: matchInputOriginal,
-        comment: null,
-      },
-      expect.any(Object),
-    );
-  });
-
-  it("closes on Cancel without calling the mutation", async () => {
-    const user = userEvent.setup();
-    mutateMock.mockClear();
-
-    renderWithProviders(
-      <CommentDialog matchInput={matchInputOriginal} comment="draft" />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /draft/i }));
 
     expect(
-      screen.getByRole("heading", { name: "Match Comment" }),
-    ).toBeVisible();
-
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
-
-    expect(mutateMock).not.toHaveBeenCalled();
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("heading", { name: "Match Comment" }),
-      ).not.toBeInTheDocument();
-    });
+      screen.queryByRole("textbox", { name: "Comment" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("read only")).toBeInTheDocument();
   });
 });

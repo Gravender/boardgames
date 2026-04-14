@@ -16,27 +16,14 @@ async function cleanupTestData(browserName: string) {
 }
 
 async function fillAndSaveComment(page: Page, text: string) {
-  const commentCard = page
-    .locator('[data-slot="card"]')
-    .filter({ has: page.getByText("Comment:") })
-    .first();
-  const commentTrigger = commentCard.getByRole("button").first();
-  await commentTrigger.click();
-  await expect(
-    page.getByRole("heading", { name: "Match Comment" }),
-  ).toBeVisible();
-  await page.getByRole("textbox", { name: "Comment" }).fill(text);
-  await page.getByRole("button", { name: "Ok" }).click();
+  const commentBox = page.getByRole("textbox", { name: "Comment" });
+  await commentBox.fill(text);
+  await expect(page.getByText("Saved")).toBeVisible({ timeout: 8000 });
   await page.reload();
-  // Wait until refetched match data shows the saved comment before reopening the dialog;
-  // otherwise the form can mount with empty defaultValues while the query is still loading.
-  await expect(commentCard).toContainText(text, { timeout: 15000 });
-  await commentTrigger.click();
   await expect(page.getByRole("textbox", { name: "Comment" })).toHaveValue(
     text,
-    { timeout: 7000 },
+    { timeout: 15000 },
   );
-  await page.getByRole("button", { name: "Cancel" }).click();
 }
 
 async function editPlayerDetails(
@@ -47,12 +34,19 @@ async function editPlayerDetails(
   const detailsOptionalRow = page
     .locator("tr")
     .filter({ hasText: "Details(optional)" });
-  await detailsOptionalRow.locator("button").first().click();
+  const playerName = `${browserName}${PLAYER_PREFIX} 1`;
+  const detailsTrigger = detailsOptionalRow.getByRole("button", {
+    name: `Edit Player ${playerName} Details`,
+  });
+  await expect(detailsTrigger).toBeVisible();
+  await detailsTrigger.scrollIntoViewIfNeeded();
+  await detailsTrigger.click();
+  const detailDialog = page.getByRole("dialog");
   await expect(
-    page.getByRole("heading", { name: `${browserName}${PLAYER_PREFIX} 1` }),
+    detailDialog.getByRole("heading", { name: `Player ${playerName} Details` }),
   ).toBeVisible();
-  await page.getByRole("textbox", { name: "Details" }).fill(details);
-  await page.getByRole("button", { name: "Ok" }).click();
+  await detailDialog.getByRole("textbox", { name: "Details" }).fill(details);
+  await detailDialog.getByRole("button", { name: "Done" }).click();
   await expect(detailsOptionalRow.getByText(details)).toBeVisible({
     timeout: 7000,
   });
@@ -123,13 +117,23 @@ test.describe("Match Scoresheet Dialogs - Basic", () => {
       teams: [{ name: "Blue Team", playerIndices: [0, 1] }],
     });
 
-    const detailsRow = page.locator("tr").filter({ hasText: "Details" });
-    await detailsRow.locator("button").first().click();
+    const detailsRow = page.locator("tr").filter({
+      has: page.locator("th").filter({ hasText: /^Details$/ }),
+    });
+    const teamDetailsTrigger = detailsRow.getByRole("button", {
+      name: "Edit Team Blue Team Details",
+    });
+    await expect(teamDetailsTrigger).toBeVisible();
+    await teamDetailsTrigger.scrollIntoViewIfNeeded();
+    await teamDetailsTrigger.click();
+    const teamDetailDialog = page.getByRole("dialog");
     await expect(
-      page.getByRole("heading", { name: "Team: Blue Team" }),
+      teamDetailDialog.getByRole("heading", { name: "Team Blue Team Details" }),
     ).toBeVisible();
-    await page.getByRole("textbox", { name: "Details" }).fill(teamDetailText);
-    await page.getByRole("button", { name: "Ok" }).click();
+    await teamDetailDialog
+      .getByRole("textbox", { name: "Details" })
+      .fill(teamDetailText);
+    await teamDetailDialog.getByRole("button", { name: "Done" }).click();
     await expect(detailsRow.getByText(teamDetailText)).toBeVisible({
       timeout: 7000,
     });

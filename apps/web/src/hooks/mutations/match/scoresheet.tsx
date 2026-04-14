@@ -7,6 +7,12 @@ import { usePostHog } from "posthog-js/react";
 
 import { toast } from "@board-games/ui/toast";
 
+import { patchMatchQueryData } from "~/hooks/match/cache/patch-match-cache";
+import {
+  applyMatchDetailsOptimisticPatch,
+  applyPlayerOrTeamScoreOptimisticPatch,
+  applyRoundScoreOptimisticPatch,
+} from "~/hooks/match/cache/patch-players-and-teams-cache";
 import { formatMatchLink } from "~/utils/linkFormatting";
 import { invalidatePlayerStatsQueries } from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
@@ -336,51 +342,13 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
         await queryClient.cancelQueries(
           trpc.match.getMatchPlayersAndTeams.queryOptions(input),
         );
-        const prevData = queryClient.getQueryData(
-          trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
-        );
+        const queryKey =
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey;
+        const prevData = queryClient.getQueryData(queryKey);
         if (prevData) {
-          const newData = {
-            ...prevData,
-            players: prevData.players.map((player) => {
-              if (
-                newRoundScore.type === "player" &&
-                player.baseMatchPlayerId === newRoundScore.matchPlayerId
-              ) {
-                return {
-                  ...player,
-                  rounds: player.rounds.map((round) => {
-                    if (round.id === newRoundScore.round.id) {
-                      return {
-                        ...round,
-                        score: newRoundScore.round.score,
-                      };
-                    }
-                    return round;
-                  }),
-                };
-              } else if (newRoundScore.type === "team") {
-                if (player.teamId === newRoundScore.teamId) {
-                  return {
-                    ...player,
-                    rounds: player.rounds.map((round) => {
-                      if (round.id === newRoundScore.round.id) {
-                        return {
-                          ...round,
-                          score: newRoundScore.round.score,
-                        };
-                      }
-                      return round;
-                    }),
-                  };
-                }
-              }
-              return player;
-            }),
-          };
           queryClient.setQueryData(
-            trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
-            newData,
+            queryKey,
+            applyRoundScoreOptimisticPatch(prevData, newRoundScore),
           );
         }
         return { newRoundScore, previousData: prevData };
@@ -467,35 +435,13 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
         await queryClient.cancelQueries(
           trpc.match.getMatchPlayersAndTeams.queryOptions(input),
         );
-        const prevData = queryClient.getQueryData(
-          trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
-        );
+        const queryKey =
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey;
+        const prevData = queryClient.getQueryData(queryKey);
         if (prevData) {
-          const newData = {
-            ...prevData,
-            players: prevData.players.map((player) => {
-              if (
-                newScore.type === "player" &&
-                player.baseMatchPlayerId === newScore.matchPlayerId
-              ) {
-                return {
-                  ...player,
-                  score: newScore.score,
-                };
-              } else if (newScore.type === "team") {
-                if (player.teamId === newScore.teamId) {
-                  return {
-                    ...player,
-                    score: newScore.score,
-                  };
-                }
-              }
-              return player;
-            }),
-          };
           queryClient.setQueryData(
-            trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
-            newData,
+            queryKey,
+            applyPlayerOrTeamScoreOptimisticPatch(prevData, newScore),
           );
         }
         return { newScore, previousData: prevData };
@@ -571,18 +517,11 @@ export const useUpdateMatchCommentMutation = () => {
         await queryClient.cancelQueries(
           trpc.match.getMatch.queryOptions(matchInput),
         );
-        const prevData = queryClient.getQueryData(
-          trpc.match.getMatch.queryOptions(matchInput).queryKey,
-        );
-        if (prevData) {
-          queryClient.setQueryData(
-            trpc.match.getMatch.queryOptions(matchInput).queryKey,
-            {
-              ...prevData,
-              comment: variables.comment,
-            },
-          );
-        }
+        const queryKey = trpc.match.getMatch.queryOptions(matchInput).queryKey;
+        const prevData = queryClient.getQueryData(queryKey);
+        patchMatchQueryData(queryClient, queryKey, {
+          comment: variables.comment,
+        });
         return { previousData: prevData, matchInput };
       },
       onError: (error, _variables, onMutateResult) => {
@@ -603,11 +542,6 @@ export const useUpdateMatchCommentMutation = () => {
           );
         }
       },
-      onSettled: (_data, _error, variables) => {
-        void queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions(variables.match),
-        );
-      },
     }),
   );
   return {
@@ -624,52 +558,16 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
         await queryClient.cancelQueries(
           trpc.match.getMatchPlayersAndTeams.queryOptions(input),
         );
-        const prevData = queryClient.getQueryData(
-          trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
-        );
+        const queryKey =
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey;
+        const prevData = queryClient.getQueryData(queryKey);
         if (prevData) {
-          if (newDetails.type === "player") {
-            const newData = {
-              ...prevData,
-              players: prevData.players.map((player) => {
-                if (player.baseMatchPlayerId === newDetails.id) {
-                  return {
-                    ...player,
-                    details: newDetails.details,
-                  };
-                }
-                return player;
-              }),
-            };
-            queryClient.setQueryData(
-              trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
-              newData,
-            );
-          } else if (newDetails.type === "team") {
-            const newData = {
-              ...prevData,
-              teams: prevData.teams.map((team) => {
-                if (team.id === newDetails.teamId) {
-                  return {
-                    ...team,
-                    details: newDetails.details,
-                  };
-                }
-                return team;
-              }),
-            };
-            queryClient.setQueryData(
-              trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
-              newData,
-            );
-          }
+          queryClient.setQueryData(
+            queryKey,
+            applyMatchDetailsOptimisticPatch(prevData, newDetails),
+          );
         }
         return { newDetails, previousData: prevData };
-      },
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
-        );
       },
       onError: (error, newDetails, context) => {
         if (newDetails.type === "team") {

@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePostHog } from "posthog-js/react";
 
 import { toast } from "@board-games/ui/toast";
@@ -14,7 +10,10 @@ import { useTRPC } from "~/trpc/react";
 export const useMatchImages = ({ matchId }: { matchId: number }) => {
   const trpc = useTRPC();
 
-  return useSuspenseQuery(trpc.image.getMatchImages.queryOptions({ matchId }));
+  return useQuery({
+    ...trpc.image.getMatchImages.queryOptions({ matchId }),
+    placeholderData: (previous) => previous,
+  });
 };
 
 export const useDeleteMatchImageMutation = ({
@@ -30,9 +29,10 @@ export const useDeleteMatchImageMutation = ({
 
   return useMutation(
     trpc.image.deleteMatchImage.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.image.getMatchImages.queryOptions({ matchId }),
+      onSuccess: async (_data, variables) => {
+        queryClient.setQueryData(
+          trpc.image.getMatchImages.queryOptions({ matchId }).queryKey,
+          (old) => (old ?? []).filter((img) => img.id !== variables.id),
         );
         toast.success("Image deleted successfully!");
         onSuccess?.();

@@ -16,6 +16,7 @@ export const TextAreaField = ({
   description,
   disabled,
   hideLabel,
+  textareaClassName,
 }: {
   label: string;
   placeholder?: string;
@@ -23,6 +24,7 @@ export const TextAreaField = ({
   description?: string;
   disabled?: boolean;
   hideLabel?: boolean;
+  textareaClassName?: string;
 }) => {
   const field = useFieldContext<string>();
   const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -43,6 +45,7 @@ export const TextAreaField = ({
         aria-invalid={isInvalid}
         placeholder={placeholder}
         disabled={disabled}
+        className={textareaClassName}
       />
       {isInvalid && <FieldError errors={field.state.meta.errors} />}
     </Field>
