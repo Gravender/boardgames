@@ -1,9 +1,8 @@
 import { forwardRef, useEffect, useState } from "react";
+import { useDebouncedCallback } from "@tanstack/react-pacer";
 
 import { Input } from "@board-games/ui/input";
 import { cn } from "@board-games/ui/utils";
-
-import { useDebounce } from "~/hooks/use-debounce";
 
 interface NumberInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   defaultValue?: string | number;
@@ -40,9 +39,12 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       `${defaultValue?.toString() ?? ""}`,
     );
 
-    const debouncedOnChange = useDebounce((value: number | null) => {
-      onValueChange?.(value);
-    }, debounceTime);
+    const debouncedOnChange = useDebouncedCallback(
+      (value: number | null) => {
+        onValueChange?.(value);
+      },
+      { wait: debounceTime },
+    );
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
