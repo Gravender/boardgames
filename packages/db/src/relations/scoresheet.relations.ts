@@ -17,6 +17,14 @@ export const scoresheetRelations = defineRelationsPart(schema, (r) => ({
       from: r.scoresheet.id,
       to: r.sharedScoresheet.scoresheetId,
     }),
+    analyticsLinkedSharedScoresheets: r.many.sharedScoresheet({
+      from: r.scoresheet.id,
+      to: r.sharedScoresheet.analyticsLinkedScoresheetId,
+    }),
+    forkedFromSharedScoresheet: r.one.sharedScoresheet({
+      from: r.scoresheet.forkedFromSharedScoresheetId,
+      to: r.sharedScoresheet.id,
+    }),
     matches: r.many.match({
       from: r.scoresheet.id,
       to: r.match.scoresheetId,

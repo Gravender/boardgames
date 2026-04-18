@@ -2,7 +2,10 @@ import type {
   CreateGameInputType,
   EditGameInputType,
   GetGameInputType,
+  GetSharedScoresheetAnalyticsLinkStateInputType,
   ImportBGGGamesInputType,
+  LinkSharedRoundsAnalyticsInputType,
+  LinkSharedScoresheetAnalyticsInputType,
 } from "../../routers/game/game.input";
 import type {
   PosthogUserCtx,
@@ -43,3 +46,12 @@ export type GetGamePlayerStatsArgs = WithPosthogUserCtx<GetGameInputType>;
 export type GetGameScoresheetStatsArgs = WithUserIdCtx<GetGameInputType>;
 
 export type GetGameInsightsArgs = WithUserIdCtx<GetGameInputType>;
+
+export type GetSharedScoresheetAnalyticsLinkStateArgs =
+  WithUserIdCtx<GetSharedScoresheetAnalyticsLinkStateInputType>;
+
+export type LinkSharedScoresheetAnalyticsArgs =
+  WithUserIdCtx<LinkSharedScoresheetAnalyticsInputType>;
+
+export type LinkSharedRoundsAnalyticsArgs =
+  WithUserIdCtx<LinkSharedRoundsAnalyticsInputType>;

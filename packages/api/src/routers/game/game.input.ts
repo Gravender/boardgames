@@ -20,6 +20,34 @@ export const getGameInput = z.discriminatedUnion("type", [
 
 export type GetGameInputType = z.infer<typeof getGameInput>;
 
+export const getSharedScoresheetAnalyticsLinkStateInput = z.object({
+  sharedScoresheetId: z.number(),
+});
+export type GetSharedScoresheetAnalyticsLinkStateInputType = z.infer<
+  typeof getSharedScoresheetAnalyticsLinkStateInput
+>;
+
+export const linkSharedScoresheetAnalyticsInput = z.object({
+  sharedScoresheetId: z.number(),
+  analyticsLinkedScoresheetId: z.number().nullable(),
+});
+export type LinkSharedScoresheetAnalyticsInputType = z.infer<
+  typeof linkSharedScoresheetAnalyticsInput
+>;
+
+export const linkSharedRoundsAnalyticsInput = z.object({
+  sharedScoresheetId: z.number(),
+  links: z.array(
+    z.object({
+      sharedRoundId: z.number(),
+      analyticsLinkedRoundId: z.number().nullable(),
+    }),
+  ),
+});
+export type LinkSharedRoundsAnalyticsInputType = z.infer<
+  typeof linkSharedRoundsAnalyticsInput
+>;
+
 export const createGameInput = z.object({
   game: insertGameSchema
     .pick({

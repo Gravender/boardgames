@@ -8,6 +8,7 @@ import type {
 } from "../../routers/game/game.input";
 import type { GetLocationInputType } from "../../routers/location/location.input";
 import type {
+  TransactionType,
   WithRepoUserIdInput,
   WithRepoUserIdInputRequiredTx,
   WithTxInput,
@@ -124,6 +125,13 @@ export type DeleteSharedGameRoleArgs = WithTxInput<{
 }>;
 
 export type GetGameStatsHeaderArgs = WithRepoUserIdInput<GetGameInputType>;
+
+export type GetGameStatsHeaderDataArgs = {
+  userId: string;
+  userPlayerId: number;
+  input: GetGameInputType;
+  tx?: TransactionType;
+};
 
 export interface GetGameStatsHeaderOutputType {
   winRate: number; // 0-100 percentage

@@ -74,6 +74,10 @@ export const matchRelations = defineRelationsPart(schema, (r) => ({
       from: r.round.id,
       to: r.sharedRound.linkedRoundId,
     }),
+    analyticsLinkedSharedRounds: r.many.sharedRound({
+      from: r.round.id,
+      to: r.sharedRound.analyticsLinkedRoundId,
+    }),
   },
   match: {
     creator: r.one.user({

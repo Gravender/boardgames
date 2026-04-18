@@ -18,7 +18,7 @@ type SortField =
 type SortOrder = "asc" | "desc";
 
 function getScoresheetKey(s: ScoresheetStatsItem): string {
-  return `${s.type}-${s.type === "original" ? s.id : s.sharedId}`;
+  return s.analyticsGroupingKey;
 }
 
 export function getCurrentPlayerKey(player: OverallPlayer): string {

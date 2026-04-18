@@ -30,6 +30,9 @@ const sharedScoresheet = createTable(
     linkedScoresheetId: integer("linked_scoresheet_id").references(
       () => scoresheet.id,
     ),
+    analyticsLinkedScoresheetId: integer(
+      "analytics_linked_scoresheet_id",
+    ).references(() => scoresheet.id),
     sharedGameId: integer("shared_game_id")
       .references(() => sharedGame.id)
       .notNull(),
@@ -57,6 +60,9 @@ const sharedScoresheet = createTable(
       table.sharedWithId,
     ),
     index("boardgames_shared_scoresheet_id_index").on(table.id),
+    index(
+      "boardgames_shared_scoresheet_analytics_linked_scoresheet_id_index",
+    ).on(table.analyticsLinkedScoresheetId),
   ],
 );
 

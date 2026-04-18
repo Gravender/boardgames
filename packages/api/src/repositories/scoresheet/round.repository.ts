@@ -1,9 +1,10 @@
 import type { AnyColumn, SQL } from "drizzle-orm";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 import { round, sharedRound } from "@board-games/db/schema";
+import { vRoundAnalyticsForUser } from "@board-games/db/views";
 
 import type {
   InsertRoundInputType,
@@ -260,6 +261,144 @@ class RoundRepository {
       )
       .returning();
     return linkedSharedRound;
+  }
+
+  public async linkSharedRoundAnalytics(args: {
+    input: {
+      sharedRoundId: number;
+      linkedRoundId: number | null;
+      sharedScoresheetId: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [updatedSharedRound] = await database
+      .update(sharedRound)
+      .set({ analyticsLinkedRoundId: input.linkedRoundId })
+      .where(
+        and(
+          eq(sharedRound.id, input.sharedRoundId),
+          eq(sharedRound.sharedScoresheetId, input.sharedScoresheetId),
+        ),
+      )
+      .returning();
+    return updatedSharedRound;
+  }
+
+  public async bulkLinkSharedRoundsAnalytics(args: {
+    input: {
+      links: {
+        sharedRoundId: number;
+        linkedRoundId: number | null;
+      }[];
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    if (input.links.length === 0) {
+      return [];
+    }
+    const updatedSharedRounds = await Promise.all(
+      input.links.map((link) =>
+        database
+          .update(sharedRound)
+          .set({
+            analyticsLinkedRoundId: link.linkedRoundId,
+          })
+          .where(eq(sharedRound.id, link.sharedRoundId))
+          .returning()
+          .then((rows) => rows[0] ?? null),
+      ),
+    );
+    return updatedSharedRounds.filter((row) => row !== null);
+  }
+
+  public async getSharedRoundsForAnalytics(args: {
+    input: {
+      sharedScoresheetId: number;
+      sharedWithId: string;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    return database.query.sharedRound.findMany({
+      where: {
+        sharedScoresheetId: input.sharedScoresheetId,
+        sharedWithId: input.sharedWithId,
+      },
+      with: {
+        round: true,
+        analyticsLinkedRound: true,
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+  }
+
+  public async setLegacyLinkedRoundIdIfNeeded(args: {
+    input: {
+      links: {
+        sharedRoundId: number;
+        linkedRoundId: number;
+      }[];
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    if (input.links.length === 0) {
+      return [];
+    }
+    const updatedSharedRounds = await Promise.all(
+      input.links.map((link) =>
+        database
+          .update(sharedRound)
+          .set({
+            linkedRoundId: link.linkedRoundId,
+          })
+          .where(
+            and(
+              eq(sharedRound.id, link.sharedRoundId),
+              isNull(sharedRound.linkedRoundId),
+            ),
+          )
+          .returning()
+          .then((rows) => rows[0] ?? null),
+      ),
+    );
+    return updatedSharedRounds.filter((row) => row !== null);
+  }
+
+  public async getRoundAnalyticsFamilyRows(args: {
+    input: {
+      userId: string;
+      analyticsGroupingRoundId: number;
+      analyticsGroupingRoundSourceType: "local" | "shared";
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    return database
+      .select()
+      .from(vRoundAnalyticsForUser)
+      .where(
+        and(
+          eq(vRoundAnalyticsForUser.visibleToUserId, input.userId),
+          eq(
+            vRoundAnalyticsForUser.analyticsGroupingRoundId,
+            input.analyticsGroupingRoundId,
+          ),
+          eq(
+            vRoundAnalyticsForUser.analyticsGroupingRoundSourceType,
+            input.analyticsGroupingRoundSourceType,
+          ),
+        ),
+      );
   }
 }
 
