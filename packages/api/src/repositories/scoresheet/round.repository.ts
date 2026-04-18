@@ -26,6 +26,7 @@ interface CaseEntry {
  * Returns `undefined` when no entries are provided (field was never set).
  */
 const buildCaseExpression = (
+  idColumn: AnyColumn | SQL,
   column: AnyColumn | SQL,
   entries: CaseEntry[],
 ): SQL | undefined => {
@@ -33,7 +34,7 @@ const buildCaseExpression = (
   const chunks: SQL[] = [sql`(case`];
   for (const e of entries) {
     chunks.push(
-      sql`when ${round.id} = ${e.id} then ${sql`${e.value}::${sql.raw(e.cast)}`}`,
+      sql`when ${idColumn} = ${e.id} then ${sql`${e.value}::${sql.raw(e.cast)}`}`,
     );
   }
   chunks.push(sql`else ${column} end)`);
@@ -171,7 +172,7 @@ class RoundRepository {
           entries.push({ id: inputRound.id, value, cast: field.cast });
         }
       }
-      const expr = buildCaseExpression(field.column, entries);
+      const expr = buildCaseExpression(round.id, field.column, entries);
       if (expr) {
         setData[field.key] = expr;
       }
@@ -393,24 +394,42 @@ class RoundRepository {
       }
     }
 
-    const updatedSharedRounds = await Promise.all(
-      input.links.map((link) =>
-        database
-          .update(sharedRound)
-          .set({
-            analyticsLinkedRoundId: link.linkedRoundId,
-          })
-          .where(
-            and(
-              eq(sharedRound.id, link.sharedRoundId),
-              eq(sharedRound.sharedScoresheetId, input.sharedScoresheetId),
-            ),
-          )
-          .returning()
-          .then((rows) => rows[0] ?? null),
-      ),
+    const analyticsLinkedRoundExpression = buildCaseExpression(
+      sharedRound.id,
+      sharedRound.analyticsLinkedRoundId,
+      input.links.map((link) => ({
+        id: link.sharedRoundId,
+        value: link.linkedRoundId,
+        cast: "integer",
+      })),
     );
-    return updatedSharedRounds.filter((row) => row !== null);
+    if (!analyticsLinkedRoundExpression) {
+      return [];
+    }
+
+    const updatedSharedRounds = await database
+      .update(sharedRound)
+      .set({
+        analyticsLinkedRoundId: analyticsLinkedRoundExpression,
+      })
+      .where(
+        and(
+          eq(sharedRound.sharedScoresheetId, input.sharedScoresheetId),
+          inArray(sharedRound.id, sharedRoundIds),
+        ),
+      )
+      .returning();
+
+    const updatedSharedRoundById = new Map(
+      updatedSharedRounds.map((sharedRoundRow) => [
+        sharedRoundRow.id,
+        sharedRoundRow,
+      ]),
+    );
+
+    return input.links
+      .map((link) => updatedSharedRoundById.get(link.sharedRoundId) ?? null)
+      .filter((row) => row !== null);
   }
 
   public async clearSharedRoundsAnalyticsLinksForScoresheet(args: {
@@ -481,24 +500,54 @@ class RoundRepository {
     if (input.links.length === 0) {
       return [];
     }
-    const updatedSharedRounds = await Promise.all(
-      input.links.map((link) =>
-        database
-          .update(sharedRound)
-          .set({
-            linkedRoundId: link.linkedRoundId,
-          })
-          .where(
-            and(
-              eq(sharedRound.id, link.sharedRoundId),
-              isNull(sharedRound.linkedRoundId),
-            ),
-          )
-          .returning()
-          .then((rows) => rows[0] ?? null),
-      ),
+
+    const uniqueSharedRoundIds = new Set<number>();
+    for (const link of input.links) {
+      if (uniqueSharedRoundIds.has(link.sharedRoundId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "duplicate sharedRoundId in links",
+        });
+      }
+      uniqueSharedRoundIds.add(link.sharedRoundId);
+    }
+
+    const linkedRoundExpression = buildCaseExpression(
+      sharedRound.id,
+      sharedRound.linkedRoundId,
+      input.links.map((link) => ({
+        id: link.sharedRoundId,
+        value: link.linkedRoundId,
+        cast: "integer",
+      })),
     );
-    return updatedSharedRounds.filter((row) => row !== null);
+    if (!linkedRoundExpression) {
+      return [];
+    }
+
+    const updatedSharedRounds = await database
+      .update(sharedRound)
+      .set({
+        linkedRoundId: linkedRoundExpression,
+      })
+      .where(
+        and(
+          inArray(sharedRound.id, Array.from(uniqueSharedRoundIds)),
+          isNull(sharedRound.linkedRoundId),
+        ),
+      )
+      .returning();
+
+    const updatedSharedRoundById = new Map(
+      updatedSharedRounds.map((sharedRoundRow) => [
+        sharedRoundRow.id,
+        sharedRoundRow,
+      ]),
+    );
+
+    return input.links
+      .map((link) => updatedSharedRoundById.get(link.sharedRoundId) ?? null)
+      .filter((row) => row !== null);
   }
 
   public async getRoundAnalyticsFamilyRows(args: {

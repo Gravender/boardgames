@@ -3,7 +3,6 @@ import { alias } from "drizzle-orm/pg-core";
 import { caseWhen } from "drizzle-plus";
 import { jsonBuildObject } from "drizzle-plus/pg";
 
-import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 import {
   image,
@@ -67,13 +66,18 @@ class GameStatsRepository {
         })
         .from(vMatchPlayerCanonicalForUser)
         .where(
-          and(
-            eq(vMatchPlayerCanonicalForUser.canonicalPlayerId, userPlayerId),
-            vMatchPlayerCanonicalViewerForUser(
-              vMatchPlayerCanonicalForUser,
-              userId,
-            ),
-          ),
+          userPlayerId === null
+            ? sql`false`
+            : and(
+                eq(
+                  vMatchPlayerCanonicalForUser.canonicalPlayerId,
+                  userPlayerId,
+                ),
+                vMatchPlayerCanonicalViewerForUser(
+                  vMatchPlayerCanonicalForUser,
+                  userId,
+                ),
+              ),
         )
         .orderBy(vMatchPlayerCanonicalForUser.canonicalMatchId),
     );

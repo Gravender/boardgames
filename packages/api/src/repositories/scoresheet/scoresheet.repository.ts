@@ -1,4 +1,4 @@
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import type {
   Filter,
@@ -29,6 +29,55 @@ class ScoresheetRepository {
       .values(input)
       .returning();
     return returningScoresheet;
+  }
+  public async insertMaterializedLocalScoresheetIfAbsent(
+    input: InsertScoreSheetInputType & {
+      createdBy: string;
+      forkedFromSharedScoresheetId: number;
+    },
+    tx?: TransactionType,
+  ) {
+    const database = tx ?? db;
+    const [insertedScoresheet] = await database
+      .insert(scoresheet)
+      .values(input)
+      .onConflictDoNothing({
+        target: [scoresheet.createdBy, scoresheet.forkedFromSharedScoresheetId],
+        where: sql`${scoresheet.deletedAt} IS NULL AND ${scoresheet.forkedFromSharedScoresheetId} IS NOT NULL`,
+      })
+      .returning();
+
+    if (insertedScoresheet) {
+      return {
+        scoresheet: insertedScoresheet,
+        wasInserted: true,
+      };
+    }
+
+    const existingScoresheet = await database.query.scoresheet.findFirst({
+      where: {
+        createdBy: input.createdBy,
+        forkedFromSharedScoresheetId: input.forkedFromSharedScoresheetId,
+        deletedAt: {
+          isNull: true,
+        },
+        type: {
+          in: ["Game", "Default"],
+        },
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+
+    if (!existingScoresheet) {
+      return undefined;
+    }
+
+    return {
+      scoresheet: existingScoresheet,
+      wasInserted: false,
+    };
   }
   public async insertShared(
     input: InsertSharedScoreSheetInputType,
@@ -371,6 +420,7 @@ class ScoresheetRepository {
   public async getSharedForMaterialization(args: {
     input: {
       sharedScoresheetId: number;
+      sharedGameId: number;
       userId: string;
     };
     tx?: TransactionType;
@@ -381,6 +431,7 @@ class ScoresheetRepository {
       where: {
         id: input.sharedScoresheetId,
         sharedWithId: input.userId,
+        sharedGameId: input.sharedGameId,
         type: "game",
       },
       with: {
@@ -415,7 +466,7 @@ class ScoresheetRepository {
             isNull: true,
           },
           type: {
-            OR: [{ eq: "Game" }, { eq: "Default" }],
+            in: ["Game", "Default"],
           },
         },
         with: {

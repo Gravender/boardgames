@@ -55,6 +55,8 @@ class MatchService {
           scoresheetInput: input.scoresheet,
           userId,
           gameId,
+          sharedGameId:
+            input.game.type === "shared" ? input.game.sharedGameId : undefined,
           tx,
         });
         if (matchScoresheet.type !== "Match") {

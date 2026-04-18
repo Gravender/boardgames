@@ -41,17 +41,6 @@ class GameStatsService {
     const userPlayerId = await playerRepository.getUserPlayerIdForUser({
       userId: ctx.userId,
     });
-    if (userPlayerId === null) {
-      return {
-        winRate: 0,
-        avgPlaytime: 0,
-        totalPlaytime: 0,
-        userTotalPlaytime: 0,
-        userAvgPlaytime: 0,
-        overallMatchesPlayed: 0,
-        userMatchesPlayed: 0,
-      };
-    }
 
     const stats = await gameStatsRepository.getGameStatsHeaderData({
       input,
@@ -59,19 +48,23 @@ class GameStatsService {
       userPlayerId,
     });
 
+    const userMatchesPlayed =
+      userPlayerId === null ? 0 : Number(stats.userMatchesPlayed);
     const winRate =
-      stats.userMatchesPlayed > 0
-        ? (stats.userWins / stats.userMatchesPlayed) * 100
-        : 0;
+      userMatchesPlayed > 0 ? (stats.userWins / userMatchesPlayed) * 100 : 0;
 
     return {
       winRate: Number(Number(winRate).toFixed(2)),
       avgPlaytime: Number(Number(stats.avgPlaytime).toFixed(0)),
       totalPlaytime: Number(stats.totalPlaytime),
-      userTotalPlaytime: Number(stats.userTotalPlaytime),
-      userAvgPlaytime: Number(Number(stats.userAvgPlaytime).toFixed(0)),
+      userTotalPlaytime:
+        userPlayerId === null ? 0 : Number(stats.userTotalPlaytime),
+      userAvgPlaytime:
+        userPlayerId === null
+          ? 0
+          : Number(Number(stats.userAvgPlaytime).toFixed(0)),
       overallMatchesPlayed: Number(stats.overallMatchesPlayed),
-      userMatchesPlayed: Number(stats.userMatchesPlayed),
+      userMatchesPlayed,
     };
   }
 

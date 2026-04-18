@@ -168,7 +168,7 @@ describe("Match creation from shared scoresheets seeds analytics linkage", () =>
     });
   });
 
-  test("reuses the same materialized local original on the second shared create", async () => {
+  test("reuses the same materialized local original across concurrent shared creates", async () => {
     const ownerCaller = await createAuthenticatedCaller(ownerLifecycle.userId);
 
     const ownerFixture = await createGameWithAnalyticsScoresheet(ownerCaller, {
@@ -189,18 +189,20 @@ describe("Match creation from shared scoresheets seeds analytics linkage", () =>
       matchScoresheetId: ownerMatch.matchScoresheetId,
     });
 
-    const firstMatch = await createRecipientSharedMatch({
-      recipientUserId: recipientLifecycle.userId,
-      sharedGameId: sharedFixture.sharedGameId,
-      sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
-      matchName: "Recipient Reuse Shared Match One",
-    });
-    const secondMatch = await createRecipientSharedMatch({
-      recipientUserId: recipientLifecycle.userId,
-      sharedGameId: sharedFixture.sharedGameId,
-      sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
-      matchName: "Recipient Reuse Shared Match Two",
-    });
+    const [firstMatch, secondMatch] = await Promise.all([
+      createRecipientSharedMatch({
+        recipientUserId: recipientLifecycle.userId,
+        sharedGameId: sharedFixture.sharedGameId,
+        sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        matchName: "Recipient Reuse Shared Match One",
+      }),
+      createRecipientSharedMatch({
+        recipientUserId: recipientLifecycle.userId,
+        sharedGameId: sharedFixture.sharedGameId,
+        sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        matchName: "Recipient Reuse Shared Match Two",
+      }),
+    ]);
 
     const sharedGameRow = await db.query.sharedGame.findFirst({
       where: {
@@ -239,6 +241,73 @@ describe("Match creation from shared scoresheets seeds analytics linkage", () =>
     expect(sharedScoresheetRow?.analyticsLinkedScoresheetId).toBe(
       localOriginal?.id,
     );
+  });
+
+  test("rejects a shared scoresheet that does not belong to the selected shared game", async () => {
+    const ownerCaller = await createAuthenticatedCaller(ownerLifecycle.userId);
+    const recipientCaller = await createAuthenticatedCaller(
+      recipientLifecycle.userId,
+    );
+
+    const firstFixture = await createGameWithAnalyticsScoresheet(ownerCaller, {
+      gameName: "Scoped Shared Game One",
+    });
+    const firstMatch = await createFinishedMatchForScoresheet(ownerCaller, {
+      gameId: firstFixture.gameId,
+      scoresheetId: firstFixture.scoresheetId,
+      matchName: "Scoped Shared Match One",
+    });
+    const secondFixture = await createGameWithAnalyticsScoresheet(ownerCaller, {
+      gameName: "Scoped Shared Game Two",
+    });
+    const secondMatch = await createFinishedMatchForScoresheet(ownerCaller, {
+      gameId: secondFixture.gameId,
+      scoresheetId: secondFixture.scoresheetId,
+      matchName: "Scoped Shared Match Two",
+    });
+
+    const sharedFixtureOne = await shareFinishedMatchAnalyticsWithRecipient({
+      ownerUserId: ownerLifecycle.userId,
+      recipientUserId: recipientLifecycle.userId,
+      gameId: firstFixture.gameId,
+      gameScoresheetId: firstFixture.scoresheetId,
+      matchId: firstMatch.matchId,
+      matchScoresheetId: firstMatch.matchScoresheetId,
+    });
+    const sharedFixtureTwo = await shareFinishedMatchAnalyticsWithRecipient({
+      ownerUserId: ownerLifecycle.userId,
+      recipientUserId: recipientLifecycle.userId,
+      gameId: secondFixture.gameId,
+      gameScoresheetId: secondFixture.scoresheetId,
+      matchId: secondMatch.matchId,
+      matchScoresheetId: secondMatch.matchScoresheetId,
+    });
+
+    const createdPlayers = await createPlayers(
+      recipientCaller,
+      2,
+      "Scoped Shared Player",
+    );
+
+    await expect(
+      recipientCaller.match.createMatch({
+        name: "Scoped Shared Mismatch",
+        date: new Date("2026-03-14T12:00:00.000Z"),
+        game: { type: "shared", sharedGameId: sharedFixtureOne.sharedGameId },
+        scoresheet: {
+          type: "shared",
+          sharedId: sharedFixtureTwo.sharedGameScoresheetId,
+        },
+        players: createdPlayers.map((player) => ({
+          type: "original" as const,
+          id: player.id,
+          roles: [],
+          teamId: null,
+        })),
+        teams: [],
+        location: null,
+      }),
+    ).rejects.toThrow("Shared scoresheet not found. For Create Match");
   });
 
   test("promotes a legacy materialized copy into analytics linkage without duplicating it", async () => {

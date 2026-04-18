@@ -2,11 +2,6 @@ import type { inferProcedureInput } from "@trpc/server";
 
 import { db } from "@board-games/db/client";
 import {
-  match,
-  matchPlayer,
-  player,
-  round,
-  scoresheet,
   sharedGame,
   sharedMatch,
   sharedMatchPlayer,
@@ -286,24 +281,24 @@ export const shareFinishedMatchAnalyticsWithRecipient = async (options: {
       "Match-level shared scoresheet fixture was not created.",
     );
 
-    const insertedSharedPlayers = await Promise.all(
-      matchPlayersWithPlayer.map(async (matchPlayerRow) => {
-        const [createdSharedPlayer] = await tx
-          .insert(sharedPlayer)
-          .values({
-            ownerId: ownerUserId,
-            sharedWithId: recipientUserId,
-            playerId: matchPlayerRow.playerId,
-            permission,
-          })
-          .returning();
+    const insertedSharedPlayers = await tx
+      .insert(sharedPlayer)
+      .values(
+        matchPlayersWithPlayer.map((matchPlayerRow) => ({
+          ownerId: ownerUserId,
+          sharedWithId: recipientUserId,
+          playerId: matchPlayerRow.playerId,
+          permission,
+        })),
+      )
+      .returning();
 
-        return assertInserted(
-          createdSharedPlayer,
-          `Shared player fixture was not created for owner player ${String(matchPlayerRow.playerId)}.`,
-        );
-      }),
-    );
+    insertedSharedPlayers.forEach((sharedPlayerRow) => {
+      assertInserted(
+        sharedPlayerRow,
+        `Shared player fixture was not created for owner player ${String(sharedPlayerRow.playerId)}.`,
+      );
+    });
 
     const sharedPlayerIdByPlayerId = new Map(
       insertedSharedPlayers.map((sharedPlayerRow) => [
@@ -329,27 +324,27 @@ export const shareFinishedMatchAnalyticsWithRecipient = async (options: {
       "Shared match fixture was not created.",
     );
 
-    const insertedSharedMatchPlayers = await Promise.all(
-      matchPlayersWithPlayer.map(async (matchPlayerRow) => {
-        const [createdSharedMatchPlayer] = await tx
-          .insert(sharedMatchPlayer)
-          .values({
-            ownerId: ownerUserId,
-            sharedWithId: recipientUserId,
-            matchPlayerId: matchPlayerRow.id,
-            sharedMatchId: sharedMatchRow.id,
-            sharedPlayerId:
-              sharedPlayerIdByPlayerId.get(matchPlayerRow.playerId) ?? null,
-            permission,
-          })
-          .returning();
+    const insertedSharedMatchPlayers = await tx
+      .insert(sharedMatchPlayer)
+      .values(
+        matchPlayersWithPlayer.map((matchPlayerRow) => ({
+          ownerId: ownerUserId,
+          sharedWithId: recipientUserId,
+          matchPlayerId: matchPlayerRow.id,
+          sharedMatchId: sharedMatchRow.id,
+          sharedPlayerId:
+            sharedPlayerIdByPlayerId.get(matchPlayerRow.playerId) ?? null,
+          permission,
+        })),
+      )
+      .returning();
 
-        return assertInserted(
-          createdSharedMatchPlayer,
-          `Shared match player fixture was not created for match player ${String(matchPlayerRow.id)}.`,
-        );
-      }),
-    );
+    insertedSharedMatchPlayers.forEach((sharedMatchPlayerRow) => {
+      assertInserted(
+        sharedMatchPlayerRow,
+        `Shared match player fixture was not created for match player ${String(sharedMatchPlayerRow.matchPlayerId)}.`,
+      );
+    });
 
     const sharedGameRounds = await tx.query.sharedRound.findMany({
       where: {
@@ -433,7 +428,7 @@ export const getLocalOriginalScoresheetsForUser = async (options: {
         isNull: true,
       },
       type: {
-        OR: [{ eq: "Game" }, { eq: "Default" }],
+        in: ["Game", "Default"],
       },
     },
     with: {

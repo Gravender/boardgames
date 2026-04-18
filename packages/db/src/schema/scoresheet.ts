@@ -6,6 +6,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -78,6 +79,13 @@ const scoresheets = createTable(
     index("boardgames_scoresheet_forked_from_shared_scoresheet_id_index").on(
       table.forkedFromSharedScoresheetId,
     ),
+    uniqueIndex(
+      "boardgames_scoresheet_created_by_forked_from_shared_active_unique",
+    )
+      .on(table.createdBy, table.forkedFromSharedScoresheetId)
+      .where(
+        sql`${table.deletedAt} IS NULL AND ${table.forkedFromSharedScoresheetId} IS NOT NULL`,
+      ),
   ],
 );
 

@@ -57,8 +57,6 @@ describe("Game stats router analytics integration", () => {
         recipientLifecycle.userId,
       );
 
-      await ensureUserPlayer(recipientCaller);
-
       const ownerFixture = await createGameWithAnalyticsScoresheet(
         ownerCaller,
         {
@@ -131,9 +129,9 @@ describe("Game stats router analytics integration", () => {
       expect(
         playerStats.players.every((player) => player.type === "shared"),
       ).toBe(true);
-      expect(playerStats.players.map((player) => player.name).sort()).toEqual(
-        ownerMatch.players.map((player) => player.name).sort(),
-      );
+      expect(
+        playerStats.players.map((player) => player.name).toSorted(),
+      ).toEqual(ownerMatch.players.map((player) => player.name).toSorted());
     });
   });
 
@@ -165,9 +163,9 @@ describe("Game stats router analytics integration", () => {
       });
 
       expect(header.overallMatchesPlayed).toBe(1);
-      expect(playerStats.players.map((player) => player.name).sort()).toEqual(
-        finishedMatch.players.map((player) => player.name).sort(),
-      );
+      expect(
+        playerStats.players.map((player) => player.name).toSorted(),
+      ).toEqual(finishedMatch.players.map((player) => player.name).toSorted());
       expect(scoresheetStats).toHaveLength(1);
 
       const [family] = scoresheetStats;
@@ -438,7 +436,8 @@ describe("Game stats router analytics integration", () => {
 
       expect(headerA.overallMatchesPlayed).toBe(1);
       expect(headerB.overallMatchesPlayed).toBe(1);
-      expect(playerStatsA.players).toHaveLength(playerStatsB.players.length);
+      expect(playerStatsA.players).toHaveLength(2);
+      expect(playerStatsB.players).toHaveLength(2);
       expect(scoresheetStatsA).toHaveLength(1);
       expect(scoresheetStatsB).toHaveLength(1);
 

@@ -8,7 +8,6 @@ import type {
 } from "../../routers/game/game.input";
 import type { GetLocationInputType } from "../../routers/location/location.input";
 import type {
-  TransactionType,
   WithRepoUserIdInput,
   WithRepoUserIdInputRequiredTx,
   WithTxInput,
@@ -128,7 +127,7 @@ export type GetGameStatsHeaderArgs = WithRepoUserIdInput<GetGameInputType>;
 
 export type GetGameStatsHeaderDataArgs = {
   userId: string;
-  userPlayerId: number;
+  userPlayerId: number | null;
   input: GetGameInputType;
 };
 
