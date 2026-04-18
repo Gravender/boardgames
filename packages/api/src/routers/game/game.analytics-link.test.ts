@@ -8,6 +8,7 @@ import {
   test,
 } from "vitest";
 
+import { roundRepository } from "../../repositories/scoresheet/round.repository";
 import {
   createFinishedMatchForScoresheet,
   createGameWithAnalyticsScoresheet,
@@ -190,6 +191,125 @@ describe("Game analytics link router integration", () => {
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
+
+    test("clears stale round links when relinking to a different local scoresheet", async () => {
+      const recipientCaller = await createAuthenticatedCaller(
+        recipientLifecycle.userId,
+      );
+      const firstRecipientFixture = await createGameWithAnalyticsScoresheet(
+        recipientCaller,
+        {
+          gameName: "Recipient First Link Game",
+          scoresheetName: "Recipient First Link Sheet",
+        },
+      );
+      const secondRecipientFixture = await createGameWithAnalyticsScoresheet(
+        recipientCaller,
+        {
+          gameName: "Recipient Second Link Game",
+          scoresheetName: "Recipient Second Link Sheet",
+        },
+      );
+      const { ownerFixture, ownerMatch } = await createSharedFixture();
+      const sharedFixture = await shareFinishedMatchAnalyticsWithRecipient({
+        ownerUserId: ownerLifecycle.userId,
+        recipientUserId: recipientLifecycle.userId,
+        gameId: ownerFixture.gameId,
+        gameScoresheetId: ownerFixture.scoresheetId,
+        matchId: ownerMatch.matchId,
+        matchScoresheetId: ownerMatch.matchScoresheetId,
+      });
+
+      await recipientCaller.game.linkSharedScoresheetAnalytics({
+        sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        analyticsLinkedScoresheetId: firstRecipientFixture.scoresheetId,
+      });
+      await recipientCaller.game.linkSharedRoundsAnalytics({
+        sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        links: sharedFixture.sharedGameRounds.map((sharedRound, index) => ({
+          sharedRoundId: sharedRound.id,
+          analyticsLinkedRoundId:
+            firstRecipientFixture.rounds[index]?.id ?? null,
+        })),
+      });
+
+      await recipientCaller.game.linkSharedScoresheetAnalytics({
+        sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        analyticsLinkedScoresheetId: secondRecipientFixture.scoresheetId,
+      });
+
+      const result =
+        await recipientCaller.game.getSharedScoresheetAnalyticsLinkState({
+          sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        });
+
+      expect(result.analyticsLinkedScoresheetId).toBe(
+        secondRecipientFixture.scoresheetId,
+      );
+      expect(
+        result.rounds.every((round) => round.analyticsLinkedRoundId === null),
+      ).toBe(true);
+      expect(
+        result.rounds.every(
+          (round) => round.linkageState === "shared_unlinked",
+        ),
+      ).toBe(true);
+    });
+
+    test("clears stale round links when unlinking the shared scoresheet", async () => {
+      const recipientCaller = await createAuthenticatedCaller(
+        recipientLifecycle.userId,
+      );
+      const recipientFixture = await createGameWithAnalyticsScoresheet(
+        recipientCaller,
+        {
+          gameName: "Recipient Unlink Game",
+          scoresheetName: "Recipient Unlink Sheet",
+        },
+      );
+      const { ownerFixture, ownerMatch } = await createSharedFixture();
+      const sharedFixture = await shareFinishedMatchAnalyticsWithRecipient({
+        ownerUserId: ownerLifecycle.userId,
+        recipientUserId: recipientLifecycle.userId,
+        gameId: ownerFixture.gameId,
+        gameScoresheetId: ownerFixture.scoresheetId,
+        matchId: ownerMatch.matchId,
+        matchScoresheetId: ownerMatch.matchScoresheetId,
+        linkedGameId: recipientFixture.gameId,
+      });
+
+      await recipientCaller.game.linkSharedScoresheetAnalytics({
+        sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        analyticsLinkedScoresheetId: recipientFixture.scoresheetId,
+      });
+      await recipientCaller.game.linkSharedRoundsAnalytics({
+        sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        links: sharedFixture.sharedGameRounds.map((sharedRound, index) => ({
+          sharedRoundId: sharedRound.id,
+          analyticsLinkedRoundId: recipientFixture.rounds[index]?.id ?? null,
+        })),
+      });
+
+      await recipientCaller.game.linkSharedScoresheetAnalytics({
+        sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        analyticsLinkedScoresheetId: null,
+      });
+
+      const result =
+        await recipientCaller.game.getSharedScoresheetAnalyticsLinkState({
+          sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        });
+
+      expect(result.analyticsLinkedScoresheetId).toBeNull();
+      expect(
+        result.rounds.every((round) => round.analyticsLinkedRoundId === null),
+      ).toBe(true);
+      expect(
+        result.rounds.every(
+          (round) => round.linkageState === "shared_unlinked",
+        ),
+      ).toBe(true);
+    });
   });
 
   describe("linkSharedRoundsAnalytics", () => {
@@ -309,6 +429,52 @@ describe("Game analytics link router integration", () => {
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
+    test("rejects duplicate sharedRoundId entries in the request payload", async () => {
+      const recipientCaller = await createAuthenticatedCaller(
+        recipientLifecycle.userId,
+      );
+      const recipientFixture = await createGameWithAnalyticsScoresheet(
+        recipientCaller,
+        {
+          gameName: "Recipient Duplicate Round Game",
+          scoresheetName: "Recipient Duplicate Round Sheet",
+        },
+      );
+      const { ownerFixture, ownerMatch } = await createSharedFixture();
+      const sharedFixture = await shareFinishedMatchAnalyticsWithRecipient({
+        ownerUserId: ownerLifecycle.userId,
+        recipientUserId: recipientLifecycle.userId,
+        gameId: ownerFixture.gameId,
+        gameScoresheetId: ownerFixture.scoresheetId,
+        matchId: ownerMatch.matchId,
+        matchScoresheetId: ownerMatch.matchScoresheetId,
+        linkedGameId: recipientFixture.gameId,
+      });
+
+      await recipientCaller.game.linkSharedScoresheetAnalytics({
+        sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+        analyticsLinkedScoresheetId: recipientFixture.scoresheetId,
+      });
+
+      await expect(
+        recipientCaller.game.linkSharedRoundsAnalytics({
+          sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+          links: [
+            {
+              sharedRoundId: sharedFixture.sharedGameRounds[0]!.id,
+              analyticsLinkedRoundId: recipientFixture.rounds[0]!.id,
+            },
+            {
+              sharedRoundId: sharedFixture.sharedGameRounds[0]!.id,
+              analyticsLinkedRoundId: recipientFixture.rounds[1]!.id,
+            },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+    });
+
     test("rejects a local round outside the linked local scoresheet", async () => {
       const recipientCaller = await createAuthenticatedCaller(
         recipientLifecycle.userId,
@@ -352,6 +518,75 @@ describe("Game analytics link router integration", () => {
               analyticsLinkedRoundId: wrongRoundFixture.rounds[0]!.id,
             },
           ],
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    test("repository rejects linking a shared round from another shared scoresheet", async () => {
+      const recipientCaller = await createAuthenticatedCaller(
+        recipientLifecycle.userId,
+      );
+      const recipientFixture = await createGameWithAnalyticsScoresheet(
+        recipientCaller,
+        {
+          gameName: "Recipient Repository Guard Game",
+          scoresheetName: "Recipient Repository Guard Sheet",
+        },
+      );
+
+      const firstFixture = await createSharedFixture();
+      const secondFixture = await createSharedFixture();
+
+      await expect(
+        roundRepository.bulkLinkSharedRoundsAnalytics({
+          input: {
+            sharedScoresheetId:
+              firstFixture.sharedFixture.sharedGameScoresheetId,
+            linkedScoresheetId: recipientFixture.scoresheetId,
+            links: [
+              {
+                sharedRoundId:
+                  secondFixture.sharedFixture.sharedGameRounds[0]!.id,
+                linkedRoundId: recipientFixture.rounds[0]!.id,
+              },
+            ],
+          },
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    test("repository rejects linking a round outside the declared local scoresheet", async () => {
+      const recipientCaller = await createAuthenticatedCaller(
+        recipientLifecycle.userId,
+      );
+      const recipientFixture = await createGameWithAnalyticsScoresheet(
+        recipientCaller,
+        {
+          gameName: "Recipient Repository Local Guard Game",
+          scoresheetName: "Recipient Repository Local Guard Sheet",
+        },
+      );
+      const wrongRoundFixture = await createGameWithAnalyticsScoresheet(
+        recipientCaller,
+        {
+          gameName: "Recipient Repository Wrong Round Game",
+          scoresheetName: "Recipient Repository Wrong Round Sheet",
+        },
+      );
+      const { sharedFixture } = await createSharedFixture();
+
+      await expect(
+        roundRepository.bulkLinkSharedRoundsAnalytics({
+          input: {
+            sharedScoresheetId: sharedFixture.sharedGameScoresheetId,
+            linkedScoresheetId: recipientFixture.scoresheetId,
+            links: [
+              {
+                sharedRoundId: sharedFixture.sharedGameRounds[0]!.id,
+                linkedRoundId: wrongRoundFixture.rounds[0]!.id,
+              },
+            ],
+          },
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });

@@ -250,6 +250,7 @@ class MatchSetupService {
           input: {
             sharedScoresheetId: returnedSharedScoresheet.id,
             linkedScoresheetId: existingLocalOriginal.id,
+            sharedWithId: userId,
           },
           tx,
         });
@@ -269,6 +270,8 @@ class MatchSetupService {
       if (missingAnalyticsRoundLinks.length > 0) {
         await roundRepository.bulkLinkSharedRoundsAnalytics({
           input: {
+            sharedScoresheetId: returnedSharedScoresheet.id,
+            linkedScoresheetId: existingLocalOriginal.id,
             links: missingAnalyticsRoundLinks,
           },
           tx,
@@ -340,12 +343,15 @@ class MatchSetupService {
         input: {
           sharedScoresheetId: returnedSharedScoresheet.id,
           linkedScoresheetId: localOriginalId,
+          sharedWithId: userId,
         },
         tx,
       });
 
       await roundRepository.bulkLinkSharedRoundsAnalytics({
         input: {
+          sharedScoresheetId: returnedSharedScoresheet.id,
+          linkedScoresheetId: localOriginalId,
           links: copiedRoundLinks,
         },
         tx,

@@ -550,6 +550,7 @@ describe("Game stats router analytics integration", () => {
 
       const [family] = scoresheetStats;
       expect(family).toBeDefined();
+      expect(family?.linkageState).toBe("shared_linked");
 
       const roundByName = new Map(
         family?.rounds.map((round) => [round.name, round]) ?? [],

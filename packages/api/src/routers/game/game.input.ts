@@ -37,12 +37,20 @@ export type LinkSharedScoresheetAnalyticsInputType = z.infer<
 
 export const linkSharedRoundsAnalyticsInput = z.object({
   sharedScoresheetId: z.number(),
-  links: z.array(
-    z.object({
-      sharedRoundId: z.number(),
-      analyticsLinkedRoundId: z.number().nullable(),
-    }),
-  ),
+  links: z
+    .array(
+      z.object({
+        sharedRoundId: z.number(),
+        analyticsLinkedRoundId: z.number().nullable(),
+      }),
+    )
+    .refine(
+      (links) =>
+        new Set(links.map((link) => link.sharedRoundId)).size === links.length,
+      {
+        message: "duplicate sharedRoundId in links",
+      },
+    ),
 });
 export type LinkSharedRoundsAnalyticsInputType = z.infer<
   typeof linkSharedRoundsAnalyticsInput

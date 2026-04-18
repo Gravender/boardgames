@@ -126,6 +126,7 @@ export interface AggregatedScoresheetFamily {
   permission: "view" | "edit" | null;
   rounds: Map<string, AggregatedRound>;
   matchResultsByPlayer: Map<string, MatchResultByPlayerEntry>;
+  /** Key format is `<sourceType>:<visibleScoresheetId>`, for example `local:12` or `shared:34`. */
   contributingVisibleScoresheets: Map<string, ContributingVisibleScoresheet>;
   contributingMatchIds: Set<number>;
 }

@@ -64,7 +64,9 @@ const rounds = createTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
+    index("boardgames_round_parent_id_index").on(table.parentId),
     index("boardgames_round_scoresheet_id_index").on(table.scoresheetId),
+    index("boardgames_round_deleted_at_index").on(table.deletedAt),
     index("boardgames_round_round_key_index").on(table.roundKey),
     uniqueIndex("boardgames_round_scoresheet_round_key_active_unique")
       .on(table.scoresheetId, table.roundKey)

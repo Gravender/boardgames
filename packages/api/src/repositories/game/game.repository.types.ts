@@ -130,7 +130,6 @@ export type GetGameStatsHeaderDataArgs = {
   userId: string;
   userPlayerId: number;
   input: GetGameInputType;
-  tx?: TransactionType;
 };
 
 export interface GetGameStatsHeaderOutputType {

@@ -295,6 +295,7 @@ class ScoresheetRepository {
     input: {
       sharedScoresheetId: number;
       linkedScoresheetId: number | null;
+      sharedWithId: string;
     };
     tx?: TransactionType;
   }) {
@@ -305,7 +306,12 @@ class ScoresheetRepository {
       .set({
         analyticsLinkedScoresheetId: input.linkedScoresheetId,
       })
-      .where(eq(sharedScoresheet.id, input.sharedScoresheetId))
+      .where(
+        and(
+          eq(sharedScoresheet.id, input.sharedScoresheetId),
+          eq(sharedScoresheet.sharedWithId, input.sharedWithId),
+        ),
+      )
       .returning();
     return updatedSharedScoresheet;
   }

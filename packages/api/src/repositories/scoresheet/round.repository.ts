@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import type { AnyColumn, SQL } from "drizzle-orm";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 
@@ -288,6 +289,8 @@ class RoundRepository {
 
   public async bulkLinkSharedRoundsAnalytics(args: {
     input: {
+      sharedScoresheetId: number;
+      linkedScoresheetId: number | null;
       links: {
         sharedRoundId: number;
         linkedRoundId: number | null;
@@ -300,6 +303,96 @@ class RoundRepository {
     if (input.links.length === 0) {
       return [];
     }
+
+    const uniqueSharedRoundIds = new Set<number>();
+    for (const link of input.links) {
+      if (uniqueSharedRoundIds.has(link.sharedRoundId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "duplicate sharedRoundId in links",
+        });
+      }
+      uniqueSharedRoundIds.add(link.sharedRoundId);
+    }
+
+    const sharedRoundIds = Array.from(uniqueSharedRoundIds);
+    const sharedRounds = await database.query.sharedRound.findMany({
+      columns: {
+        id: true,
+        sharedScoresheetId: true,
+      },
+      where: {
+        id: {
+          in: sharedRoundIds,
+        },
+      },
+    });
+
+    if (sharedRounds.length !== sharedRoundIds.length) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "One or more shared rounds were not found.",
+      });
+    }
+
+    for (const existingSharedRound of sharedRounds) {
+      if (existingSharedRound.sharedScoresheetId !== input.sharedScoresheetId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Shared round does not belong to this shared scoresheet.",
+        });
+      }
+    }
+
+    const linkedRoundIds = Array.from(
+      new Set(
+        input.links
+          .map((link) => link.linkedRoundId)
+          .filter(
+            (linkedRoundId): linkedRoundId is number => linkedRoundId !== null,
+          ),
+      ),
+    );
+
+    if (linkedRoundIds.length > 0 && input.linkedScoresheetId === null) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Analytics-linked rounds require an analytics-linked local scoresheet.",
+      });
+    }
+
+    if (linkedRoundIds.length > 0) {
+      const linkedRounds = await database.query.round.findMany({
+        columns: {
+          id: true,
+          scoresheetId: true,
+        },
+        where: {
+          id: {
+            in: linkedRoundIds,
+          },
+        },
+      });
+
+      if (linkedRounds.length !== linkedRoundIds.length) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "One or more analytics-linked rounds were not found.",
+        });
+      }
+
+      for (const linkedRound of linkedRounds) {
+        if (linkedRound.scoresheetId !== input.linkedScoresheetId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Analytics-linked round must belong to the analytics-linked local scoresheet.",
+          });
+        }
+      }
+    }
+
     const updatedSharedRounds = await Promise.all(
       input.links.map((link) =>
         database
@@ -307,12 +400,47 @@ class RoundRepository {
           .set({
             analyticsLinkedRoundId: link.linkedRoundId,
           })
-          .where(eq(sharedRound.id, link.sharedRoundId))
+          .where(
+            and(
+              eq(sharedRound.id, link.sharedRoundId),
+              eq(sharedRound.sharedScoresheetId, input.sharedScoresheetId),
+            ),
+          )
           .returning()
           .then((rows) => rows[0] ?? null),
       ),
     );
     return updatedSharedRounds.filter((row) => row !== null);
+  }
+
+  public async clearSharedRoundsAnalyticsLinksForScoresheet(args: {
+    input: {
+      sharedScoresheetId: number;
+      linkedScoresheetId: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+
+    return database
+      .update(sharedRound)
+      .set({
+        analyticsLinkedRoundId: null,
+      })
+      .where(
+        and(
+          eq(sharedRound.sharedScoresheetId, input.sharedScoresheetId),
+          inArray(
+            sharedRound.analyticsLinkedRoundId,
+            database
+              .select({ id: round.id })
+              .from(round)
+              .where(eq(round.scoresheetId, input.linkedScoresheetId)),
+          ),
+        ),
+      )
+      .returning();
   }
 
   public async getSharedRoundsForAnalytics(args: {

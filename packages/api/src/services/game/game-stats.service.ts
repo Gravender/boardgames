@@ -1,7 +1,5 @@
 import { TRPCError } from "@trpc/server";
 
-import { db } from "@board-games/db/client";
-
 import type { GetGameStatsHeaderOutputType } from "../../repositories/game/game.repository.types";
 import type {
   GetGamePlayerStatsOutputType,
@@ -27,6 +25,7 @@ import type {
 } from "./game.service.types";
 import { gameStatsRepository } from "../../repositories/game/game-stats.repository";
 import { gameRepository } from "../../repositories/game/game.repository";
+import { playerRepository } from "../../repositories/player/player.repository";
 import { mapPlayerImageRowWithLogging } from "../../utils/image";
 
 const sharedPlayerTypes = new Set(["shared", "linked"]);
@@ -39,13 +38,10 @@ class GameStatsService {
 
     await this.assertGameAccessible(input, ctx.userId);
 
-    const userPlayer = await db.query.player.findFirst({
-      where: {
-        isUser: true,
-        createdBy: ctx.userId,
-      },
+    const userPlayerId = await playerRepository.getUserPlayerIdForUser({
+      userId: ctx.userId,
     });
-    if (!userPlayer) {
+    if (userPlayerId === null) {
       return {
         winRate: 0,
         avgPlaytime: 0,
@@ -60,7 +56,7 @@ class GameStatsService {
     const stats = await gameStatsRepository.getGameStatsHeaderData({
       input,
       userId: ctx.userId,
-      userPlayerId: userPlayer.id,
+      userPlayerId,
     });
 
     const winRate =
@@ -265,7 +261,7 @@ class GameStatsService {
         scoresheetMap.set(row.analyticsGroupingKey, scoresheet);
       }
 
-      const contributingKey = `${row.visibleScoresheetSourceType}-${row.visibleScoresheetId}`;
+      const contributingKey = `${row.visibleScoresheetSourceType}:${row.visibleScoresheetId}`;
       const contributor = scoresheet.contributingVisibleScoresheets.get(
         contributingKey,
       ) ?? {

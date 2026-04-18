@@ -223,7 +223,7 @@ class GameStatsRepository {
         analyticsGroupingScoresheetSourceType:
           vScoresheetAnalyticsForUser.analyticsGroupingScoresheetSourceType,
         analyticsGroupingKey: vScoresheetAnalyticsForUser.analyticsGroupingKey,
-        linkageState: vRoundAnalyticsForUser.linkageState,
+        linkageState: vScoresheetAnalyticsForUser.linkageState,
         visibleScoresheetId: vRoundAnalyticsForUser.visibleScoresheetId,
         visibleScoresheetSourceType:
           vScoresheetAnalyticsForUser.visibleScoresheetSourceType,

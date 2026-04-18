@@ -106,10 +106,26 @@ class GameAnalyticsLinkService {
         }
       }
 
+      const previousLinkedScoresheetId =
+        sharedScoresheet.analyticsLinkedScoresheetId;
+      if (
+        previousLinkedScoresheetId !== null &&
+        previousLinkedScoresheetId !== input.analyticsLinkedScoresheetId
+      ) {
+        await roundRepository.clearSharedRoundsAnalyticsLinksForScoresheet({
+          input: {
+            sharedScoresheetId: input.sharedScoresheetId,
+            linkedScoresheetId: previousLinkedScoresheetId,
+          },
+          tx,
+        });
+      }
+
       await scoresheetRepository.linkSharedScoresheetAnalytics({
         input: {
           sharedScoresheetId: input.sharedScoresheetId,
           linkedScoresheetId: input.analyticsLinkedScoresheetId,
+          sharedWithId: ctx.userId,
         },
         tx,
       });
@@ -198,6 +214,8 @@ class GameAnalyticsLinkService {
 
       await roundRepository.bulkLinkSharedRoundsAnalytics({
         input: {
+          sharedScoresheetId: input.sharedScoresheetId,
+          linkedScoresheetId,
           links: input.links.map((link) => ({
             sharedRoundId: link.sharedRoundId,
             linkedRoundId: link.analyticsLinkedRoundId,

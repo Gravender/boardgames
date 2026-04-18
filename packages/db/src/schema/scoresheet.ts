@@ -72,6 +72,8 @@ const scoresheets = createTable(
   },
   (table) => [
     index("boardgames_scoresheet_game_id_index").on(table.gameId),
+    index("boardgames_scoresheet_parent_id_index").on(table.parentId),
+    index("boardgames_scoresheet_deleted_at_index").on(table.deletedAt),
     index("boardgames_scoresheet_scoresheet_key_index").on(table.scoresheetKey),
     index("boardgames_scoresheet_forked_from_shared_scoresheet_id_index").on(
       table.forkedFromSharedScoresheetId,
