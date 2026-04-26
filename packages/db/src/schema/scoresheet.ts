@@ -6,6 +6,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -29,6 +30,7 @@ const scoresheets = createTable(
       "template_revision_of_scoresheet_id",
     ),
     forkedFromScoresheetId: integer("forked_from_scoresheet_id"),
+    forkedFromSharedScoresheetId: integer("forked_from_shared_scoresheet_id"),
     forkedFromGameId: integer("forked_from_game_id").references(() => game.id),
     forkedForMatchId: integer("forked_for_match_id"),
     name: varchar("name", { length: 256 }).notNull(),
@@ -71,7 +73,19 @@ const scoresheets = createTable(
   },
   (table) => [
     index("boardgames_scoresheet_game_id_index").on(table.gameId),
+    index("boardgames_scoresheet_parent_id_index").on(table.parentId),
+    index("boardgames_scoresheet_deleted_at_index").on(table.deletedAt),
     index("boardgames_scoresheet_scoresheet_key_index").on(table.scoresheetKey),
+    index("boardgames_scoresheet_forked_from_shared_scoresheet_id_index").on(
+      table.forkedFromSharedScoresheetId,
+    ),
+    uniqueIndex(
+      "boardgames_scoresheet_created_by_forked_from_shared_active_unique",
+    )
+      .on(table.createdBy, table.forkedFromSharedScoresheetId)
+      .where(
+        sql`${table.deletedAt} IS NULL AND ${table.forkedFromSharedScoresheetId} IS NOT NULL`,
+      ),
   ],
 );
 

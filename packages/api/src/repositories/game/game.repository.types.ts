@@ -125,6 +125,12 @@ export type DeleteSharedGameRoleArgs = WithTxInput<{
 
 export type GetGameStatsHeaderArgs = WithRepoUserIdInput<GetGameInputType>;
 
+export type GetGameStatsHeaderDataArgs = {
+  userId: string;
+  userPlayerId: number | null;
+  input: GetGameInputType;
+};
+
 export interface GetGameStatsHeaderOutputType {
   winRate: number; // 0-100 percentage
   avgPlaytime: number; // seconds, or 0 if no valid matches

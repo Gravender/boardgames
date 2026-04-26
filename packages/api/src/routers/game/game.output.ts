@@ -400,6 +400,13 @@ export type GetGameScoresheetStatsRoundSchemaType = z.infer<
   typeof getGameScoresheetStatsRoundSchema
 >;
 
+const contributingVisibleScoresheetSchema = z.object({
+  visibleScoresheetId: z.number(),
+  visibleScoresheetSourceType: z.enum(["local", "shared"]),
+  name: z.string(),
+  matchCount: z.number(),
+});
+
 export const getGameScoresheetStatsOutput = z.array(
   z.discriminatedUnion("type", [
     scoreSheetSchema.safeExtend({
@@ -412,6 +419,14 @@ export const getGameScoresheetStatsOutput = z.array(
       avgScore: z.number().nullable(),
       /** Average final score when the result was a win. */
       winningAvgScore: z.number().nullable(),
+      analyticsGroupingScoresheetId: z.number(),
+      analyticsGroupingScoresheetSourceType: z.enum(["local", "shared"]),
+      analyticsGroupingKey: z.string(),
+      linkageState: z.enum(["original", "shared_unlinked", "shared_linked"]),
+      contributingVisibleScoresheets: z.array(
+        contributingVisibleScoresheetSchema,
+      ),
+      contributingMatchCount: z.number(),
       /** Overall stats per player (match count, wins, final scores). */
       players: z.array(getGameScoresheetStatsOverallPlayerSchema),
       rounds: z.array(getGameScoresheetStatsRoundSchema),
@@ -427,6 +442,14 @@ export const getGameScoresheetStatsOutput = z.array(
       avgScore: z.number().nullable(),
       /** Average final score when the result was a win. */
       winningAvgScore: z.number().nullable(),
+      analyticsGroupingScoresheetId: z.number(),
+      analyticsGroupingScoresheetSourceType: z.enum(["local", "shared"]),
+      analyticsGroupingKey: z.string(),
+      linkageState: z.enum(["original", "shared_unlinked", "shared_linked"]),
+      contributingVisibleScoresheets: z.array(
+        contributingVisibleScoresheetSchema,
+      ),
+      contributingMatchCount: z.number(),
       /** Overall stats per player (match count, wins, final scores). */
       players: z.array(getGameScoresheetStatsOverallPlayerSchema),
       rounds: z.array(getGameScoresheetStatsRoundSchema),
@@ -435,6 +458,36 @@ export const getGameScoresheetStatsOutput = z.array(
 );
 export type GetGameScoresheetStatsOutputType = z.infer<
   typeof getGameScoresheetStatsOutput
+>;
+
+export const getSharedScoresheetAnalyticsLinkStateOutput = z.object({
+  sharedScoresheetId: z.number(),
+  analyticsLinkedScoresheetId: z.number().nullable(),
+  legacyLinkedScoresheetId: z.number().nullable(),
+  linkageState: z.enum(["shared_unlinked", "shared_linked"]),
+  rounds: z.array(
+    z.object({
+      sharedRoundId: z.number(),
+      roundId: z.number(),
+      roundName: z.string(),
+      analyticsLinkedRoundId: z.number().nullable(),
+      legacyLinkedRoundId: z.number().nullable(),
+      linkageState: z.enum(["shared_unlinked", "shared_linked"]),
+    }),
+  ),
+});
+export type GetSharedScoresheetAnalyticsLinkStateOutputType = z.infer<
+  typeof getSharedScoresheetAnalyticsLinkStateOutput
+>;
+
+export const linkSharedScoresheetAnalyticsOutput = z.void();
+export type LinkSharedScoresheetAnalyticsOutputType = z.infer<
+  typeof linkSharedScoresheetAnalyticsOutput
+>;
+
+export const linkSharedRoundsAnalyticsOutput = z.void();
+export type LinkSharedRoundsAnalyticsOutputType = z.infer<
+  typeof linkSharedRoundsAnalyticsOutput
 >;
 
 // ─── Game Insights (extracted to game-insights.output.ts) ────────

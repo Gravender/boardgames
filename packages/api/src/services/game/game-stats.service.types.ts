@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 
-import { baseRoundSchema, scoreSheetSchema } from "@board-games/shared";
+import { scoreSheetSchema } from "@board-games/shared";
 
 // ---------------------------------------------------------------------------
 // getGamePlayerStats accumulator
@@ -41,7 +41,7 @@ export type GamePlayerStatsAccEntry =
   | GamePlayerStatsAccEntryShared;
 
 // ---------------------------------------------------------------------------
-// aggregateScoresheetData / calculateScoresheetStats
+// getGameScoresheetStats aggregation
 // ---------------------------------------------------------------------------
 
 export interface RoundPlayerScore {
@@ -59,12 +59,6 @@ export interface AggregatedRoundPlayer {
   plays: number;
 }
 
-export interface MatchRoundEntry {
-  roundParentId: number;
-  roundOrder: number;
-  playerRounds: { score: number | null }[];
-}
-
 export type ScoresheetRoundsScoreType = NonNullable<
   z.infer<typeof scoreSheetSchema>["roundsScore"]
 >;
@@ -74,6 +68,7 @@ export type ScoresheetWinConditionType = NonNullable<
 
 export interface AggregatedRound {
   id: number;
+  key: string;
   name: string;
   type: "Numeric" | "Checkbox";
   order: number;
@@ -84,12 +79,8 @@ export interface AggregatedRound {
   players: Map<string, AggregatedRoundPlayer>;
   allScores: number[];
   allChecked: number;
-  matchRounds: Map<number, MatchRoundEntry[]>;
-  /** Numeric: round scores when the player won the match. */
   winningRoundScores: number[];
-  /** Checkbox: count of winning performances where this round was checked. */
   winningCheckedCount: number;
-  /** Checkbox: total winning performances for this round. */
   winningTotalPlays: number;
 }
 
@@ -114,47 +105,30 @@ export interface MatchResultByPlayerEntry {
   matches: Map<number, MatchResult>;
 }
 
-export interface AggregatedScoresheet {
-  id: number;
+export interface ContributingVisibleScoresheet {
+  visibleScoresheetId: number;
+  visibleScoresheetSourceType: "local" | "shared";
   name: string;
-  rounds: Map<number, AggregatedRound>;
-  scoresheetRoundsScore: ScoresheetRoundsScoreType;
-  scoresheetWinCondition: ScoresheetWinConditionType;
-  matchResultsByPlayer: Map<string, MatchResultByPlayerEntry>;
+  matchIds: Set<number>;
 }
 
-export type AggregatedScoresheetMap = Map<number, AggregatedScoresheet>;
+export interface AggregatedScoresheetFamily {
+  analyticsGroupingScoresheetId: number;
+  analyticsGroupingScoresheetSourceType: "local" | "shared";
+  analyticsGroupingKey: string;
+  linkageState: "original" | "shared_unlinked" | "shared_linked";
+  name: string;
+  isCoop: boolean;
+  targetScore: number;
+  roundsScore: ScoresheetRoundsScoreType;
+  winCondition: ScoresheetWinConditionType;
+  isDefault: boolean;
+  permission: "view" | "edit" | null;
+  rounds: Map<string, AggregatedRound>;
+  matchResultsByPlayer: Map<string, MatchResultByPlayerEntry>;
+  /** Key format is `<sourceType>:<visibleScoresheetId>`, for example `local:12` or `shared:34`. */
+  contributingVisibleScoresheets: Map<string, ContributingVisibleScoresheet>;
+  contributingMatchIds: Set<number>;
+}
 
-// ---------------------------------------------------------------------------
-// getGameScoresheetStats accessible scoresheets (Zod)
-// ---------------------------------------------------------------------------
-
-const parenRoundSchema = baseRoundSchema.extend({
-  id: z.number(),
-});
-
-const getGameScoresheetStatsScoreSheet = z.array(
-  z.discriminatedUnion("type", [
-    scoreSheetSchema.safeExtend({
-      type: z.literal("original"),
-      scoresheetId: z.number(),
-      /** Canonical scoresheet id for stats grouping (parent or self). */
-      canonicalScoresheetId: z.number(),
-      isDefault: z.boolean(),
-      rounds: z.array(parenRoundSchema),
-    }),
-    scoreSheetSchema.safeExtend({
-      type: z.literal("shared"),
-      scoresheetId: z.number(),
-      /** Canonical scoresheet id for stats grouping (owner template parent or self). */
-      canonicalScoresheetId: z.number(),
-      sharedId: z.number(),
-      permission: z.literal("view").or(z.literal("edit")),
-      isDefault: z.boolean(),
-      rounds: z.array(parenRoundSchema),
-    }),
-  ]),
-);
-export type GetGameScoresheetStatsScoreSheetType = z.infer<
-  typeof getGameScoresheetStatsScoreSheet
->;
+export type AggregatedScoresheetMap = Map<string, AggregatedScoresheetFamily>;

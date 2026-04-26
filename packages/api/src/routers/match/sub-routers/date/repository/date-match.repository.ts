@@ -246,6 +246,7 @@ class DateMatchRepository {
           forkedFromTemplateVersion: number | null;
           templateRevisionOfScoresheetId: number | null;
           forkedFromScoresheetId: number | null;
+          forkedFromSharedScoresheetId: number | null;
           forkedFromGameId: number | null;
           forkedForMatchId: number | null;
           name: string;
@@ -267,6 +268,7 @@ class DateMatchRepository {
                     'forkedFromTemplateVersion', ${scoresheet.forkedFromTemplateVersion},
                     'templateRevisionOfScoresheetId', ${scoresheet.templateRevisionOfScoresheetId},
                     'forkedFromScoresheetId', ${scoresheet.forkedFromScoresheetId},
+                    'forkedFromSharedScoresheetId', ${scoresheet.forkedFromSharedScoresheetId},
                     'forkedFromGameId', ${scoresheet.forkedFromGameId},
                     'forkedForMatchId', ${scoresheet.forkedForMatchId},
                     'name', ${scoresheet.name},

@@ -255,6 +255,10 @@ export const sharedRelations = defineRelationsPart(schema, (r) => ({
       from: r.sharedScoresheet.linkedScoresheetId,
       to: r.scoresheet.id,
     }),
+    analyticsLinkedScoresheet: r.one.scoresheet({
+      from: r.sharedScoresheet.analyticsLinkedScoresheetId,
+      to: r.scoresheet.id,
+    }),
     sharedGame: r.one.sharedGame({
       from: r.sharedScoresheet.sharedGameId,
       to: r.sharedGame.id,
@@ -268,6 +272,10 @@ export const sharedRelations = defineRelationsPart(schema, (r) => ({
     sharedRounds: r.many.sharedRound({
       from: r.sharedScoresheet.id,
       to: r.sharedRound.sharedScoresheetId,
+    }),
+    materializedScoresheets: r.many.scoresheet({
+      from: r.sharedScoresheet.id,
+      to: r.scoresheet.forkedFromSharedScoresheetId,
     }),
   },
   sharedRound: {
@@ -288,6 +296,10 @@ export const sharedRelations = defineRelationsPart(schema, (r) => ({
     }),
     linkedRound: r.one.round({
       from: r.sharedRound.linkedRoundId,
+      to: r.round.id,
+    }),
+    analyticsLinkedRound: r.one.round({
+      from: r.sharedRound.analyticsLinkedRoundId,
       to: r.round.id,
     }),
     sharedScoresheet: r.one.sharedScoresheet({

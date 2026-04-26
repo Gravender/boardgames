@@ -1,4 +1,4 @@
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import type {
   Filter,
@@ -14,6 +14,7 @@ import type {
 } from "@board-games/db/constants";
 import { db } from "@board-games/db/client";
 import { scoresheet, sharedScoresheet } from "@board-games/db/schema";
+import { vScoresheetAnalyticsForUser } from "@board-games/db/views";
 
 import type {
   InsertScoreSheetInputType,
@@ -28,6 +29,55 @@ class ScoresheetRepository {
       .values(input)
       .returning();
     return returningScoresheet;
+  }
+  public async insertMaterializedLocalScoresheetIfAbsent(
+    input: InsertScoreSheetInputType & {
+      createdBy: string;
+      forkedFromSharedScoresheetId: number;
+    },
+    tx?: TransactionType,
+  ) {
+    const database = tx ?? db;
+    const [insertedScoresheet] = await database
+      .insert(scoresheet)
+      .values(input)
+      .onConflictDoNothing({
+        target: [scoresheet.createdBy, scoresheet.forkedFromSharedScoresheetId],
+        where: sql`${scoresheet.deletedAt} IS NULL AND ${scoresheet.forkedFromSharedScoresheetId} IS NOT NULL`,
+      })
+      .returning();
+
+    if (insertedScoresheet) {
+      return {
+        scoresheet: insertedScoresheet,
+        wasInserted: true,
+      };
+    }
+
+    const existingScoresheet = await database.query.scoresheet.findFirst({
+      where: {
+        createdBy: input.createdBy,
+        forkedFromSharedScoresheetId: input.forkedFromSharedScoresheetId,
+        deletedAt: {
+          isNull: true,
+        },
+        type: {
+          in: ["Game", "Default"],
+        },
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+
+    if (!existingScoresheet) {
+      return undefined;
+    }
+
+    return {
+      scoresheet: existingScoresheet,
+      wasInserted: false,
+    };
   }
   public async insertShared(
     input: InsertSharedScoreSheetInputType,
@@ -289,6 +339,245 @@ class ScoresheetRepository {
       .returning();
     return linkedScoresheet;
   }
+
+  public async linkSharedScoresheetAnalytics(args: {
+    input: {
+      sharedScoresheetId: number;
+      linkedScoresheetId: number | null;
+      sharedWithId: string;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [updatedSharedScoresheet] = await database
+      .update(sharedScoresheet)
+      .set({
+        analyticsLinkedScoresheetId: input.linkedScoresheetId,
+      })
+      .where(
+        and(
+          eq(sharedScoresheet.id, input.sharedScoresheetId),
+          eq(sharedScoresheet.sharedWithId, input.sharedWithId),
+        ),
+      )
+      .returning();
+    return updatedSharedScoresheet;
+  }
+
+  public async getSharedScoresheetAnalyticsState(args: {
+    input: {
+      sharedScoresheetId: number;
+      userId: string;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    return database.query.sharedScoresheet.findFirst({
+      where: {
+        id: input.sharedScoresheetId,
+        sharedWithId: input.userId,
+      },
+      with: {
+        scoresheet: true,
+        sharedGame: true,
+        analyticsLinkedScoresheet: true,
+        sharedRounds: {
+          with: {
+            round: true,
+            analyticsLinkedRound: true,
+          },
+          orderBy: {
+            id: "asc",
+          },
+        },
+      },
+    });
+  }
+
+  public async getSharedScoresheetByIdForAnalytics(args: {
+    input: {
+      sharedScoresheetId: number;
+      sharedWithId: string;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    return database.query.sharedScoresheet.findFirst({
+      where: {
+        id: input.sharedScoresheetId,
+        sharedWithId: input.sharedWithId,
+      },
+      with: {
+        scoresheet: true,
+        analyticsLinkedScoresheet: true,
+      },
+    });
+  }
+
+  public async getSharedForMaterialization(args: {
+    input: {
+      sharedScoresheetId: number;
+      sharedGameId: number;
+      userId: string;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    return database.query.sharedScoresheet.findFirst({
+      where: {
+        id: input.sharedScoresheetId,
+        sharedWithId: input.userId,
+        sharedGameId: input.sharedGameId,
+        type: "game",
+      },
+      with: {
+        scoresheet: true,
+        sharedRounds: {
+          with: {
+            round: true,
+          },
+          orderBy: {
+            id: "asc",
+          },
+        },
+      },
+    });
+  }
+
+  public async getMaterializedLocalScoresheetForSharedScoresheet(args: {
+    input: {
+      sharedScoresheetId: number;
+      userId: string;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const materializedFromProvenance =
+      await database.query.scoresheet.findFirst({
+        where: {
+          createdBy: input.userId,
+          forkedFromSharedScoresheetId: input.sharedScoresheetId,
+          deletedAt: {
+            isNull: true,
+          },
+          type: {
+            in: ["Game", "Default"],
+          },
+        },
+        with: {
+          rounds: {
+            where: {
+              deletedAt: {
+                isNull: true,
+              },
+            },
+            orderBy: {
+              order: "asc",
+            },
+          },
+        },
+        orderBy: {
+          id: "asc",
+        },
+      });
+    if (materializedFromProvenance) {
+      return materializedFromProvenance;
+    }
+
+    const sharedScoresheetRow = await database.query.sharedScoresheet.findFirst(
+      {
+        where: {
+          id: input.sharedScoresheetId,
+          sharedWithId: input.userId,
+        },
+        columns: {
+          linkedScoresheetId: true,
+        },
+      },
+    );
+    if (!sharedScoresheetRow?.linkedScoresheetId) {
+      return undefined;
+    }
+
+    return database.query.scoresheet.findFirst({
+      where: {
+        id: sharedScoresheetRow.linkedScoresheetId,
+        createdBy: input.userId,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+      with: {
+        rounds: {
+          where: {
+            deletedAt: {
+              isNull: true,
+            },
+          },
+          orderBy: {
+            order: "asc",
+          },
+        },
+      },
+    });
+  }
+
+  public async setLegacyLinkedScoresheetIdIfNeeded(args: {
+    input: {
+      sharedScoresheetId: number;
+      linkedScoresheetId: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [updatedSharedScoresheet] = await database
+      .update(sharedScoresheet)
+      .set({
+        linkedScoresheetId: input.linkedScoresheetId,
+      })
+      .where(
+        and(
+          eq(sharedScoresheet.id, input.sharedScoresheetId),
+          isNull(sharedScoresheet.linkedScoresheetId),
+        ),
+      )
+      .returning();
+    return updatedSharedScoresheet;
+  }
+
+  public async getScoresheetAnalyticsFamilyRows(args: {
+    input: {
+      userId: string;
+      analyticsGroupingScoresheetId: number;
+      analyticsGroupingScoresheetSourceType: "local" | "shared";
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    return database
+      .select()
+      .from(vScoresheetAnalyticsForUser)
+      .where(
+        and(
+          eq(vScoresheetAnalyticsForUser.visibleToUserId, input.userId),
+          eq(
+            vScoresheetAnalyticsForUser.analyticsGroupingScoresheetId,
+            input.analyticsGroupingScoresheetId,
+          ),
+          eq(
+            vScoresheetAnalyticsForUser.analyticsGroupingScoresheetSourceType,
+            input.analyticsGroupingScoresheetSourceType,
+          ),
+        ),
+      );
+  }
   public async deleteScoresheet(args: {
     input: {
       id: number;
@@ -321,6 +610,7 @@ class ScoresheetRepository {
       roundsScore?: (typeof scoreSheetRoundsScore)[number];
       targetScore?: number;
       forkedForMatchId?: number | null;
+      forkedFromSharedScoresheetId?: number | null;
     };
     tx?: TransactionType;
   }) {

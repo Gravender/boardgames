@@ -20,6 +20,9 @@ const sharedRound = createTable(
       .references(() => round.id)
       .notNull(),
     linkedRoundId: integer("linked_round_id").references(() => round.id),
+    analyticsLinkedRoundId: integer("analytics_linked_round_id").references(
+      () => round.id,
+    ),
     sharedScoresheetId: integer("shared_scoresheet_id")
       .references(() => sharedScoresheet.id)
       .notNull(),
@@ -37,6 +40,9 @@ const sharedRound = createTable(
     index("boardgames_shared_round_round_id_index").on(table.roundId),
     index("boardgames_shared_round_linked_round_id_index").on(
       table.linkedRoundId,
+    ),
+    index("boardgames_shared_round_analytics_linked_round_id_index").on(
+      table.analyticsLinkedRoundId,
     ),
     index("boardgames_shared_round_shared_scoresheet_id_index").on(
       table.sharedScoresheetId,

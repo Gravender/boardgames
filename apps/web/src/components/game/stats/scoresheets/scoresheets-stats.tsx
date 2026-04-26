@@ -142,6 +142,16 @@ export function ScoreSheetsStats({ game }: { game: GameInput }) {
                 </div>
               </div>
               <div>
+                <span className="text-muted-foreground">Analytics Family:</span>
+                <div className="font-semibold">
+                  {currentScoresheet.linkageState === "original"
+                    ? "Original"
+                    : currentScoresheet.linkageState === "shared_linked"
+                      ? "Linked shared"
+                      : "Unlinked shared"}
+                </div>
+              </div>
+              <div>
                 <span className="text-muted-foreground">Mode:</span>
                 <div className="font-semibold">
                   {currentScoresheet.isCoop ? "Co-operative" : "Competitive"}
@@ -159,7 +169,42 @@ export function ScoreSheetsStats({ game }: { game: GameInput }) {
                   {currentScoresheet.rounds.length}
                 </div>
               </div>
+              <div>
+                <span className="text-muted-foreground">
+                  Contributing Sheets:
+                </span>
+                <div className="font-semibold">
+                  {currentScoresheet.contributingVisibleScoresheets.length}
+                </div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">
+                  Contributing Matches:
+                </span>
+                <div className="font-semibold">
+                  {currentScoresheet.contributingMatchCount}
+                </div>
+              </div>
             </div>
+            {currentScoresheet.contributingVisibleScoresheets.length > 0 && (
+              <div className="border-t pt-2">
+                <span className="text-muted-foreground text-sm">
+                  Visible scoresheets in this family:
+                </span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {currentScoresheet.contributingVisibleScoresheets.map(
+                    (scoresheet) => (
+                      <Badge
+                        key={`${scoresheet.visibleScoresheetSourceType}-${scoresheet.visibleScoresheetId}`}
+                        variant="outline"
+                      >
+                        {scoresheet.name} · {scoresheet.matchCount}
+                      </Badge>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
             {currentScoresheet.winCondition === "Target Score" && (
               <div className="border-t pt-2">
                 <span className="text-muted-foreground text-sm">

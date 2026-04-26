@@ -1,9 +1,11 @@
+import { TRPCError } from "@trpc/server";
 import type { AnyColumn, SQL } from "drizzle-orm";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 import { round, sharedRound } from "@board-games/db/schema";
+import { vRoundAnalyticsForUser } from "@board-games/db/views";
 
 import type {
   InsertRoundInputType,
@@ -24,6 +26,7 @@ interface CaseEntry {
  * Returns `undefined` when no entries are provided (field was never set).
  */
 const buildCaseExpression = (
+  idColumn: AnyColumn | SQL,
   column: AnyColumn | SQL,
   entries: CaseEntry[],
 ): SQL | undefined => {
@@ -31,7 +34,7 @@ const buildCaseExpression = (
   const chunks: SQL[] = [sql`(case`];
   for (const e of entries) {
     chunks.push(
-      sql`when ${round.id} = ${e.id} then ${sql`${e.value}::${sql.raw(e.cast)}`}`,
+      sql`when ${idColumn} = ${e.id} then ${sql`${e.value}::${sql.raw(e.cast)}`}`,
     );
   }
   chunks.push(sql`else ${column} end)`);
@@ -169,7 +172,7 @@ class RoundRepository {
           entries.push({ id: inputRound.id, value, cast: field.cast });
         }
       }
-      const expr = buildCaseExpression(field.column, entries);
+      const expr = buildCaseExpression(round.id, field.column, entries);
       if (expr) {
         setData[field.key] = expr;
       }
@@ -260,6 +263,319 @@ class RoundRepository {
       )
       .returning();
     return linkedSharedRound;
+  }
+
+  public async linkSharedRoundAnalytics(args: {
+    input: {
+      sharedRoundId: number;
+      linkedRoundId: number | null;
+      sharedScoresheetId: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [updatedSharedRound] = await database
+      .update(sharedRound)
+      .set({ analyticsLinkedRoundId: input.linkedRoundId })
+      .where(
+        and(
+          eq(sharedRound.id, input.sharedRoundId),
+          eq(sharedRound.sharedScoresheetId, input.sharedScoresheetId),
+        ),
+      )
+      .returning();
+    return updatedSharedRound;
+  }
+
+  public async bulkLinkSharedRoundsAnalytics(args: {
+    input: {
+      sharedScoresheetId: number;
+      linkedScoresheetId: number | null;
+      links: {
+        sharedRoundId: number;
+        linkedRoundId: number | null;
+      }[];
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    if (input.links.length === 0) {
+      return [];
+    }
+
+    const uniqueSharedRoundIds = new Set<number>();
+    for (const link of input.links) {
+      if (uniqueSharedRoundIds.has(link.sharedRoundId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "duplicate sharedRoundId in links",
+        });
+      }
+      uniqueSharedRoundIds.add(link.sharedRoundId);
+    }
+
+    const sharedRoundIds = Array.from(uniqueSharedRoundIds);
+    const sharedRounds = await database.query.sharedRound.findMany({
+      columns: {
+        id: true,
+        sharedScoresheetId: true,
+      },
+      where: {
+        id: {
+          in: sharedRoundIds,
+        },
+      },
+    });
+
+    if (sharedRounds.length !== sharedRoundIds.length) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "One or more shared rounds were not found.",
+      });
+    }
+
+    for (const existingSharedRound of sharedRounds) {
+      if (existingSharedRound.sharedScoresheetId !== input.sharedScoresheetId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Shared round does not belong to this shared scoresheet.",
+        });
+      }
+    }
+
+    const linkedRoundIds = Array.from(
+      new Set(
+        input.links
+          .map((link) => link.linkedRoundId)
+          .filter(
+            (linkedRoundId): linkedRoundId is number => linkedRoundId !== null,
+          ),
+      ),
+    );
+
+    if (linkedRoundIds.length > 0 && input.linkedScoresheetId === null) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Analytics-linked rounds require an analytics-linked local scoresheet.",
+      });
+    }
+
+    if (linkedRoundIds.length > 0) {
+      const linkedRounds = await database.query.round.findMany({
+        columns: {
+          id: true,
+          scoresheetId: true,
+        },
+        where: {
+          id: {
+            in: linkedRoundIds,
+          },
+        },
+      });
+
+      if (linkedRounds.length !== linkedRoundIds.length) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "One or more analytics-linked rounds were not found.",
+        });
+      }
+
+      for (const linkedRound of linkedRounds) {
+        if (linkedRound.scoresheetId !== input.linkedScoresheetId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Analytics-linked round must belong to the analytics-linked local scoresheet.",
+          });
+        }
+      }
+    }
+
+    const analyticsLinkedRoundExpression = buildCaseExpression(
+      sharedRound.id,
+      sharedRound.analyticsLinkedRoundId,
+      input.links.map((link) => ({
+        id: link.sharedRoundId,
+        value: link.linkedRoundId,
+        cast: "integer",
+      })),
+    );
+    if (!analyticsLinkedRoundExpression) {
+      return [];
+    }
+
+    const updatedSharedRounds = await database
+      .update(sharedRound)
+      .set({
+        analyticsLinkedRoundId: analyticsLinkedRoundExpression,
+      })
+      .where(
+        and(
+          eq(sharedRound.sharedScoresheetId, input.sharedScoresheetId),
+          inArray(sharedRound.id, sharedRoundIds),
+        ),
+      )
+      .returning();
+
+    const updatedSharedRoundById = new Map(
+      updatedSharedRounds.map((sharedRoundRow) => [
+        sharedRoundRow.id,
+        sharedRoundRow,
+      ]),
+    );
+
+    return input.links
+      .map((link) => updatedSharedRoundById.get(link.sharedRoundId) ?? null)
+      .filter((row) => row !== null);
+  }
+
+  public async clearSharedRoundsAnalyticsLinksForScoresheet(args: {
+    input: {
+      sharedScoresheetId: number;
+      linkedScoresheetId: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+
+    return database
+      .update(sharedRound)
+      .set({
+        analyticsLinkedRoundId: null,
+      })
+      .where(
+        and(
+          eq(sharedRound.sharedScoresheetId, input.sharedScoresheetId),
+          inArray(
+            sharedRound.analyticsLinkedRoundId,
+            database
+              .select({ id: round.id })
+              .from(round)
+              .where(eq(round.scoresheetId, input.linkedScoresheetId)),
+          ),
+        ),
+      )
+      .returning();
+  }
+
+  public async getSharedRoundsForAnalytics(args: {
+    input: {
+      sharedScoresheetId: number;
+      sharedWithId: string;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    return database.query.sharedRound.findMany({
+      where: {
+        sharedScoresheetId: input.sharedScoresheetId,
+        sharedWithId: input.sharedWithId,
+      },
+      with: {
+        round: true,
+        analyticsLinkedRound: true,
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+  }
+
+  public async setLegacyLinkedRoundIdIfNeeded(args: {
+    input: {
+      links: {
+        sharedRoundId: number;
+        linkedRoundId: number;
+      }[];
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    if (input.links.length === 0) {
+      return [];
+    }
+
+    const uniqueSharedRoundIds = new Set<number>();
+    for (const link of input.links) {
+      if (uniqueSharedRoundIds.has(link.sharedRoundId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "duplicate sharedRoundId in links",
+        });
+      }
+      uniqueSharedRoundIds.add(link.sharedRoundId);
+    }
+
+    const linkedRoundExpression = buildCaseExpression(
+      sharedRound.id,
+      sharedRound.linkedRoundId,
+      input.links.map((link) => ({
+        id: link.sharedRoundId,
+        value: link.linkedRoundId,
+        cast: "integer",
+      })),
+    );
+    if (!linkedRoundExpression) {
+      return [];
+    }
+
+    const updatedSharedRounds = await database
+      .update(sharedRound)
+      .set({
+        linkedRoundId: linkedRoundExpression,
+      })
+      .where(
+        and(
+          inArray(sharedRound.id, Array.from(uniqueSharedRoundIds)),
+          isNull(sharedRound.linkedRoundId),
+        ),
+      )
+      .returning();
+
+    const updatedSharedRoundById = new Map(
+      updatedSharedRounds.map((sharedRoundRow) => [
+        sharedRoundRow.id,
+        sharedRoundRow,
+      ]),
+    );
+
+    return input.links
+      .map((link) => updatedSharedRoundById.get(link.sharedRoundId) ?? null)
+      .filter((row) => row !== null);
+  }
+
+  public async getRoundAnalyticsFamilyRows(args: {
+    input: {
+      userId: string;
+      analyticsGroupingRoundId: number;
+      analyticsGroupingRoundSourceType: "local" | "shared";
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    return database
+      .select()
+      .from(vRoundAnalyticsForUser)
+      .where(
+        and(
+          eq(vRoundAnalyticsForUser.visibleToUserId, input.userId),
+          eq(
+            vRoundAnalyticsForUser.analyticsGroupingRoundId,
+            input.analyticsGroupingRoundId,
+          ),
+          eq(
+            vRoundAnalyticsForUser.analyticsGroupingRoundSourceType,
+            input.analyticsGroupingRoundSourceType,
+          ),
+        ),
+      );
   }
 }
 
