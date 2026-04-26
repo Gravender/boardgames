@@ -10,6 +10,7 @@ import { roundRepository } from "../../repositories/scoresheet/round.repository"
 import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 import { sharedGameRepository } from "../../repositories/shared-game/shared-game.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
+import { roundConfigForInsert } from "../../utils/roundConfigForInsert";
 
 class MatchSetupService {
   public async resolveGameForMatch(args: {
@@ -534,7 +535,7 @@ class MatchSetupService {
       roundKey: sourceRound.roundKey ?? undefined,
 
       kind: sourceRound.kind,
-      config: sourceRound.config as InsertRoundInputType["config"],
+      config: roundConfigForInsert(sourceRound.kind, sourceRound.config),
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];
