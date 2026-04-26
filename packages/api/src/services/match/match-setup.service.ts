@@ -504,8 +504,9 @@ class MatchSetupService {
     });
   }
   private async insertRoundsFromTemplate(
-    rounds: (InsertRoundInputType & {
+    rounds: (Omit<InsertRoundInputType, "config"> & {
       id: number;
+      config: unknown;
       roundKey?: string | null;
       templateRoundId?: number | null;
     })[],
@@ -533,7 +534,7 @@ class MatchSetupService {
       roundKey: sourceRound.roundKey ?? undefined,
 
       kind: sourceRound.kind,
-      config: sourceRound.config,
+      config: sourceRound.config as InsertRoundInputType["config"],
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];

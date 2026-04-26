@@ -18,6 +18,7 @@ import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repo
 import { teamRepository } from "../../repositories/match/team.repository";
 import { playerRepository } from "../../repositories/player/player.repository";
 import { roundRepository } from "../../repositories/scoresheet/round.repository";
+import type { InsertRoundInputType } from "../../repositories/scoresheet/round.repository.types";
 import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 import { assertInserted } from "../../utils/databaseHelpers";
 
@@ -794,7 +795,7 @@ class GameImportService {
       // stable identity across forks
       roundKey: sourceRound.roundKey ?? undefined,
       kind: sourceRound.kind ?? undefined,
-      config: sourceRound.config,
+      config: sourceRound.config as InsertRoundInputType["config"],
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];

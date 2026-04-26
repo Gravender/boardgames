@@ -17,7 +17,6 @@ export const insertSharedScoreSheetInput = insertSharedScoresheetSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  deletedAt: true,
 });
 export type InsertSharedScoreSheetInputType = z.infer<
   typeof insertSharedScoreSheetInput

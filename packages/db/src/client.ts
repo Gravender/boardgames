@@ -44,14 +44,14 @@ export type Filter<TableName extends keyof TRSchema> = RelationsFilter<
   TRSchema
 >;
 export type QueryConfig<TableName extends keyof TRSchema> = DBQueryConfig<
-  "one" | "many",
+  "one",
   TRSchema,
   TRSchema[TableName]
 >;
 
 export type InferQueryResult<
   TableName extends keyof TRSchema,
-  QBConfig extends QueryConfig<TableName> = object,
+  QBConfig extends QueryConfig<TableName> = QueryConfig<TableName>,
 > = BuildQueryResult<TRSchema, TRSchema[TableName], QBConfig>;
 
 export type ManyQueryConfig<TableName extends keyof TRSchema> = DBQueryConfig<

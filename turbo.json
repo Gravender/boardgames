@@ -77,6 +77,10 @@
     "db:down": {
       "cache": false
     },
+    "migrate": {
+      "cache": false,
+      "passThroughEnv": ["POSTGRES_URL"]
+    },
     "ui-add": {
       "cache": false,
       "interactive": true

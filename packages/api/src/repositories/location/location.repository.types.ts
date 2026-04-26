@@ -18,7 +18,6 @@ export const sharedLocationSchemaInput = insertSharedLocationSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  deletedAt: true,
 });
 export type InsertSharedLocationInputType = z.infer<
   typeof sharedLocationSchemaInput
