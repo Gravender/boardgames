@@ -28,7 +28,7 @@
     "@board-games/shared": "workspace:*",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@trpc/server": "catalog:",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.4.2",
     "drizzle-plus": "1.0.0-rc.1",
     "luxon": "^3.7.2",
     "posthog-node": "^5.28.8",
@@ -38,6 +38,7 @@
   "devDependencies": {
     "@board-games/config": "workspace:*",
     "@types/luxon": "^3.7.1",
+    "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "^3.2.4"
   }

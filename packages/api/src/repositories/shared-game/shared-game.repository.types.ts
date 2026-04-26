@@ -7,7 +7,6 @@ export const insertSharedGameInputSchema = insertSharedGameSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  deletedAt: true,
 });
 type InsertSharedGameInputType = z.infer<typeof insertSharedGameInputSchema>;
 export interface InsertSharedGameInputArgs {
