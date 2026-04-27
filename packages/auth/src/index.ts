@@ -2,6 +2,7 @@ import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
 import React from "react";
 import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, oAuthProxy, username } from "better-auth/plugins";
 import { Resend } from "resend";
@@ -15,6 +16,46 @@ import { EmailTemplate } from "./email-templates";
 const env = authEnv();
 
 const resend = new Resend(env.RESEND_API_KEY);
+
+type PlayerCandidate = {
+  id: string;
+  name?: string | null;
+  username?: string | null;
+  email?: string | null;
+};
+
+const resolvePlayerName = (u: PlayerCandidate) =>
+  (
+    u.name?.trim() ||
+    u.username?.trim() ||
+    u.email?.split("@")[0]?.trim() ||
+    "Player"
+  ).slice(0, 256);
+
+const ensureUserPlayer = async (u: PlayerCandidate) => {
+  try {
+    const existing = await db.query.player.findFirst({
+      where: {
+        createdBy: u.id,
+        isUser: true,
+        deletedAt: { isNull: true },
+      },
+      columns: { id: true },
+    });
+    if (existing) return;
+
+    await db
+      .insert(schema.player)
+      .values({
+        createdBy: u.id,
+        name: resolvePlayerName(u),
+        isUser: true,
+      })
+      .onConflictDoNothing();
+  } catch (error) {
+    console.error("ensureUserPlayer failed", { userId: u.id, error });
+  }
+};
 
 export function initAuth<
   TExtraPlugins extends BetterAuthPlugin[] = [],
@@ -74,6 +115,20 @@ export function initAuth<
           }),
         });
       },
+    },
+    hooks: {
+      after: createAuthMiddleware(async (ctx) => {
+        const newSession = ctx.context.newSession;
+        if (!newSession) return;
+
+        const user = newSession.user;
+        await ensureUserPlayer({
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+        });
+      }),
     },
     baseURL: options.baseUrl,
     secret: options.secret,
