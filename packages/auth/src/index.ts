@@ -121,7 +121,7 @@ export function initAuth<
         const newSession = ctx.context.newSession;
         if (!newSession) return;
 
-        const user = newSession.user as PlayerCandidate;
+        const user = newSession.user;
         await ensureUserPlayer({
           id: user.id,
           name: user.name,
