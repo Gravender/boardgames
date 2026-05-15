@@ -18,7 +18,7 @@
     "format": "oxfmt --check .",
     "lint": "oxlint --report-unused-disable-directives",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
-    "ui-add": "bunx shadcn@latest add && oxfmt src",
+    "ui-add": "pnpm dlx shadcn@latest add && oxfmt src",
     "format:fix": "oxfmt .",
     "lint:fix": "oxlint --fix --report-unused-disable-directives"
   },
