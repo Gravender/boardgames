@@ -1,1 +1,11 @@
-bunx lint-staged
+{
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs}": [
+      "oxlint",
+      "oxfmt --write"
+    ],
+    "*.{json,jsonc,md,yml,yaml}": [
+      "oxfmt --write"
+    ]
+  }
+}
