@@ -28,10 +28,7 @@ import { DetailDialog } from "~/components/match/scoresheet/DetailDialog";
 import PlayerEditorDialog from "~/components/match/scoresheet/edit-player-dialog";
 import TeamEditorDialog from "~/components/match/scoresheet/edit-team-dialog";
 import { NumberInput } from "~/components/number-input";
-import {
-  useUpdateMatchPlayerOrTeamScoreMutation,
-  useUpdateMatchRoundScoreMutation,
-} from "~/hooks/mutations/match/scoresheet";
+import { useScoresheetWriteQueue } from "~/hooks/match/scoresheet/use-scoresheet-write-queue";
 import {
   useMatch,
   usePlayersAndTeams,
@@ -45,8 +42,12 @@ type Team = NonNullable<
   RouterOutputs["match"]["getMatchPlayersAndTeams"]
 >["teams"][number];
 export function ScoreSheetTable(input: { match: MatchInput }) {
-  const { match } = useMatch(input.match);
-  const { scoresheet } = useScoresheet(input.match);
+  const matchInput = input.match;
+  const { match } = useMatch(matchInput);
+  const matchCanEdit =
+    match.type === "original" || match.permissions === "edit";
+  const { scoresheet } = useScoresheet(matchInput);
+  const writeQueue = useScoresheetWriteQueue(matchInput);
   const [team, setTeam] = useState<Team | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
   return (
@@ -54,19 +55,24 @@ export function ScoreSheetTable(input: { match: MatchInput }) {
       <Table containerClassName="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
         <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20 shadow-lg">
           <HeaderRow
-            match={input.match}
+            matchInput={matchInput}
             setTeam={setTeam}
             setPlayer={setPlayer}
           />
         </TableHeader>
         <TableBody>
           {scoresheet.rounds.map((round) => (
-            <BodyRow key={`round-${round.id}`} match={match} round={round} />
+            <BodyRow
+              key={`round-${round.id}`}
+              matchInput={matchInput}
+              round={round}
+              writeQueue={writeQueue}
+            />
           ))}
         </TableBody>
         <TableFooter>
-          <CommentsRow match={match} />
-          <TotalRow match={match} />
+          <CommentsRow matchInput={matchInput} matchCanEdit={matchCanEdit} />
+          <TotalRow matchInput={matchInput} writeQueue={writeQueue} />
         </TableFooter>
       </Table>
       <TeamEditorDialog
@@ -84,15 +90,15 @@ export function ScoreSheetTable(input: { match: MatchInput }) {
 }
 
 const HeaderRow = ({
-  match,
+  matchInput,
   setTeam,
   setPlayer,
 }: {
-  match: MatchInput;
+  matchInput: MatchInput;
   setTeam: Dispatch<SetStateAction<Team | null>>;
   setPlayer: Dispatch<SetStateAction<Player | null>>;
 }) => {
-  const { players, teams } = usePlayersAndTeams(match);
+  const { players, teams } = usePlayersAndTeams(matchInput);
   const mappedTeams = useMemo(() => {
     const mappedTeams = teams
       .map((team) => {
@@ -116,7 +122,7 @@ const HeaderRow = ({
           className="bg-sidebar sticky top-0 left-0 z-10 w-20 sm:w-36"
         >
           <div>
-            <AddRoundDialog match={match} />
+            <AddRoundDialog match={matchInput} />
           </div>
         </TableHead>
         {mappedTeams.map((team) => {
@@ -186,7 +192,7 @@ const HeaderRow = ({
         className="bg-sidebar sticky top-0 left-0 w-20 sm:w-36"
       >
         <div>
-          <AddRoundDialog match={match} />
+          <AddRoundDialog match={matchInput} />
         </div>
       </TableHead>
       {players.map((player) => (
@@ -211,23 +217,23 @@ const HeaderRow = ({
   );
 };
 const BodyRow = ({
-  match,
+  matchInput,
   round,
+  writeQueue,
 }: {
-  match: MatchInput;
+  matchInput: MatchInput;
   round: RouterOutputs["match"]["getMatchScoresheet"]["rounds"][number];
+  writeQueue: ReturnType<typeof useScoresheetWriteQueue>;
 }) => {
-  const { players, teams } = usePlayersAndTeams(match);
+  const { players, teams } = usePlayersAndTeams(matchInput);
 
-  const { updateMatchRoundScoreMutation } =
-    useUpdateMatchRoundScoreMutation(match);
   const updateTeamScore = (
     teamId: number,
     roundId: number,
     value: number | null,
   ) => {
-    updateMatchRoundScoreMutation.mutate({
-      match: match,
+    writeQueue.enqueueRoundScore({
+      match: matchInput,
       type: "team",
       teamId: teamId,
       round: {
@@ -241,8 +247,8 @@ const BodyRow = ({
     roundId: number,
     value: number | null,
   ) => {
-    updateMatchRoundScoreMutation.mutate({
-      match: match,
+    writeQueue.enqueueRoundScore({
+      match: matchInput,
       type: "player",
       matchPlayerId: playerId,
       round: {
@@ -430,8 +436,18 @@ const BodyRow = ({
   );
 };
 
-const CommentsRow = ({ match }: { match: MatchInput }) => {
-  const { players, teams } = usePlayersAndTeams(match);
+/** Caps detail column width so long notes do not stretch the scoresheet. */
+const detailsTableCellClassName =
+  "border-r border-b p-0 align-top max-w-[min(15rem,calc(100vw-6rem))] min-w-0 overflow-hidden sm:max-w-[17rem]";
+
+const CommentsRow = ({
+  matchInput,
+  matchCanEdit,
+}: {
+  matchInput: MatchInput;
+  matchCanEdit: boolean;
+}) => {
+  const { players, teams } = usePlayersAndTeams(matchInput);
   if (teams.length > 0) {
     return (
       <TableRow>
@@ -446,10 +462,11 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
           .map((team) => (
             <TableCell
               key={`${team.id}-details`}
-              className="border-r border-b p-2"
+              className={detailsTableCellClassName}
             >
               <DetailDialog
-                match={match}
+                match={matchInput}
+                canEdit={matchCanEdit}
                 data={{
                   id: team.id,
                   name: team.name,
@@ -465,10 +482,11 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
             return (
               <TableCell
                 key={`${player.baseMatchPlayerId}-details`}
-                className="border-r border-b p-2"
+                className={detailsTableCellClassName}
               >
                 <DetailDialog
-                  match={match}
+                  match={matchInput}
+                  canEdit={matchCanEdit && player.permissions === "edit"}
                   data={{
                     id: player.baseMatchPlayerId,
                     name: player.name,
@@ -495,10 +513,11 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
         return (
           <TableCell
             key={`${player.baseMatchPlayerId}-details`}
-            className="border-r border-b p-2"
+            className={detailsTableCellClassName}
           >
             <DetailDialog
-              match={match}
+              match={matchInput}
+              canEdit={matchCanEdit && player.permissions === "edit"}
               data={{
                 id: player.baseMatchPlayerId,
                 name: player.name,
@@ -513,23 +532,27 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
   );
 };
 
-const TotalRow = ({ match }: { match: MatchInput }) => {
-  const { players, teams } = usePlayersAndTeams(match);
-  const { scoresheet } = useScoresheet(match);
-  const { updateMatchPlayerOrTeamScoreMutation } =
-    useUpdateMatchPlayerOrTeamScoreMutation(match);
+const TotalRow = ({
+  matchInput,
+  writeQueue,
+}: {
+  matchInput: MatchInput;
+  writeQueue: ReturnType<typeof useScoresheetWriteQueue>;
+}) => {
+  const { players, teams } = usePlayersAndTeams(matchInput);
+  const { scoresheet } = useScoresheet(matchInput);
   const updateTeamScore = (teamId: number, value: number | null) => {
-    updateMatchPlayerOrTeamScoreMutation.mutate({
+    writeQueue.enqueueTotalScore({
       type: "team",
-      match: match,
+      match: matchInput,
       teamId: teamId,
       score: value,
     });
   };
   const updatePlayerScore = (playerId: number, value: number | null) => {
-    updateMatchPlayerOrTeamScoreMutation.mutate({
+    writeQueue.enqueueTotalScore({
       type: "player",
-      match: match,
+      match: matchInput,
       matchPlayerId: playerId,
       score: value,
     });

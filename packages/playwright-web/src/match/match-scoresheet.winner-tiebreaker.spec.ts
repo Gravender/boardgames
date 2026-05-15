@@ -78,12 +78,23 @@ test.describe("Match Scoresheet Dialogs - Manual Winner and Tie Breaker", () => 
       ],
     });
 
-    const table = page.locator('[data-slot="table"]').first();
-    const scoreInputs = table.locator(
+    // Scope to the scoresheet grid (avoid an off-screen or decorative table).
+    const scoresheetTable = page
+      .locator('[data-slot="table-container"]')
+      .filter({
+        has: page.getByRole("row", { name: /Round 1/i }),
+      });
+    const scoreInputs = scoresheetTable.locator(
       'input[type="text"][inputmode="numeric"]',
     );
-    await scoreInputs.nth(0).fill("10");
-    await scoreInputs.nth(1).fill("10");
+    const firstScore = scoreInputs.nth(0);
+    const secondScore = scoreInputs.nth(1);
+    await expect(firstScore).toBeVisible();
+    await firstScore.scrollIntoViewIfNeeded();
+    await firstScore.fill("10");
+    await expect(secondScore).toBeVisible();
+    await secondScore.scrollIntoViewIfNeeded();
+    await secondScore.fill("10");
 
     await page.waitForTimeout(2500);
     await page.getByRole("button", { name: "Finish", exact: true }).click();

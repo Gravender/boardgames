@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Users } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -30,6 +31,59 @@ import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
 import { useUpdateMatchPlacementsMutation } from "~/hooks/mutations/match/scoresheet";
 import { usePlayersAndTeams } from "~/hooks/queries/match/match";
+
+function PlacementPopoverInput({
+  placement,
+  maxPlacement,
+  onCommit,
+}: {
+  placement: number;
+  maxPlacement: number;
+  onCommit: (next: number) => void;
+}) {
+  const [text, setText] = useState(String(placement));
+
+  useEffect(() => {
+    setText(String(placement));
+  }, [placement]);
+
+  const commit = () => {
+    const parsed = Number.parseInt(text, 10);
+    if (Number.isNaN(parsed) || parsed < 1 || parsed > maxPlacement) {
+      setText(String(placement));
+      return;
+    }
+    if (parsed !== placement) {
+      onCommit(parsed);
+    }
+  };
+
+  return (
+    <Input
+      aria-label="Placement"
+      value={text}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      pattern="[0-9]*"
+      className="border-none text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      onChange={(e) => {
+        const next = e.target.value;
+        if (next === "" || /^\d+$/.test(next)) {
+          setText(next);
+        }
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commit();
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+    />
+  );
+}
 
 export const TieBreakerPlayerSchema = z
   .array(
@@ -313,21 +367,10 @@ function Content({
                                 <PopoverContent>
                                   <Field>
                                     <FieldLabel>Placement</FieldLabel>
-                                    <Input
-                                      value={player.placement}
-                                      onChange={(e) => {
-                                        const newPlacement = parseInt(
-                                          e.target.value,
-                                        );
-
-                                        if (
-                                          Number.isNaN(newPlacement) ||
-                                          newPlacement < 1 ||
-                                          newPlacement > players.length
-                                        ) {
-                                          return;
-                                        }
-
+                                    <PlacementPopoverInput
+                                      placement={player.placement}
+                                      maxPlacement={players.length}
+                                      onCommit={(newPlacement) => {
                                         if (player.teamId === null) {
                                           const playerIndex = indexes.get(
                                             player.matchPlayerId,
@@ -370,10 +413,6 @@ function Content({
                                           ),
                                         );
                                       }}
-                                      type="number"
-                                      className="border-none text-center"
-                                      max={players.length}
-                                      inputMode="numeric"
                                     />
                                   </Field>
                                 </PopoverContent>

@@ -36,6 +36,26 @@ import {
 /** First `table` in the document — scoresheet UI may coexist with other tables (e.g. in dialogs). */
 const getScoresheetTable = (): HTMLElement => screen.getAllByRole("table")[0]!;
 
+/** Team column header edit (excludes DetailDialog trigger in the details row). */
+const getTeamColumnHeaderEditButton = (): HTMLElement => {
+  const buttons = screen.getAllByRole("button", { name: /Team: Team A/i });
+  const headerBtn = buttons.find(
+    (b) => b.getAttribute("data-slot") !== "dialog-trigger",
+  );
+  expect(headerBtn).toBeTruthy();
+  return headerBtn as HTMLElement;
+};
+
+/** Player column header edit (excludes DetailDialog trigger in the details row). */
+const getPlayerColumnHeaderEditButton = (name: RegExp): HTMLElement => {
+  const buttons = screen.getAllByRole("button", { name });
+  const headerBtn = buttons.find(
+    (b) => b.getAttribute("data-slot") !== "dialog-trigger",
+  );
+  expect(headerBtn).toBeTruthy();
+  return headerBtn as HTMLElement;
+};
+
 const getFirstRoundBodyRow = (): HTMLElement => {
   const tbody = getScoresheetTable().querySelector("tbody");
   expect(tbody).toBeTruthy();
@@ -93,21 +113,34 @@ vi.mock("~/hooks/mutations/match/add-round", () => ({
   }),
 }));
 
+const mutateAsyncRound = async (args: unknown) => {
+  mutateSpies.updateMatchRoundScore(args);
+};
+const mutateAsyncTotal = async (args: unknown) => {
+  mutateSpies.updateMatchPlayerOrTeamScore(args);
+};
+
 vi.mock("~/hooks/mutations/match/scoresheet", () => ({
   useUpdateMatchRoundScoreMutation: () => ({
     updateMatchRoundScoreMutation: {
       mutate: mutateSpies.updateMatchRoundScore,
+      mutateAsync: mutateAsyncRound,
       isPending: false,
     },
   }),
   useUpdateMatchPlayerOrTeamScoreMutation: () => ({
     updateMatchPlayerOrTeamScoreMutation: {
       mutate: mutateSpies.updateMatchPlayerOrTeamScore,
+      mutateAsync: mutateAsyncTotal,
       isPending: false,
     },
   }),
   useUpdateMatchDetailsMutation: () => ({
-    updateMatchDetailsMutation: { mutate: vi.fn(), isPending: false },
+    updateMatchDetailsMutation: {
+      mutate: vi.fn(),
+      mutateAsync: vi.fn(async () => {}),
+      isPending: false,
+    },
   }),
   useUpdateMatchPlayerTeamAndRolesMutation: () => ({
     updateMatchPlayerTeamAndRolesMutation: {
@@ -154,7 +187,7 @@ describe("ScoreSheetTable", () => {
 
     renderWithProviders(<ScoreSheetTable match={matchInputOriginal} />);
 
-    await user.click(screen.getByRole("button", { name: /Team: Team A/i }));
+    await user.click(getTeamColumnHeaderEditButton());
 
     expect(screen.getByRole("heading", { name: "Edit Team A" })).toBeVisible();
   });
@@ -172,7 +205,7 @@ describe("ScoreSheetTable", () => {
     await user.tab();
 
     expect(mutateSpies.updateMatchRoundScore).toHaveBeenCalledWith({
-      match: matchOriginalFixture,
+      match: matchInputOriginal,
       type: "player",
       matchPlayerId: playerOriginalAlice.baseMatchPlayerId,
       round: { id: 1, score: 9 },
@@ -193,7 +226,7 @@ describe("ScoreSheetTable", () => {
     await user.tab();
 
     expect(mutateSpies.updateMatchRoundScore).toHaveBeenCalledWith({
-      match: matchSharedFixture,
+      match: matchInputShared,
       type: "player",
       matchPlayerId: playerOriginalAlice.baseMatchPlayerId,
       round: { id: 1, score: 9 },
@@ -214,7 +247,7 @@ describe("ScoreSheetTable", () => {
     await user.tab();
 
     expect(mutateSpies.updateMatchRoundScore).toHaveBeenCalledWith({
-      match: matchOriginalFixture,
+      match: matchInputOriginal,
       type: "team",
       teamId: 1,
       round: { id: 1, score: 4 },
@@ -255,7 +288,7 @@ describe("ScoreSheetTable", () => {
       vi.advanceTimersByTime(700);
 
       expect(mutateSpies.updateMatchRoundScore).toHaveBeenCalledWith({
-        match: matchOriginalFixture,
+        match: matchInputOriginal,
         type: "player",
         matchPlayerId: playerOriginalAlice.baseMatchPlayerId,
         round: { id: 1, score: 10 },
@@ -299,7 +332,7 @@ describe("ScoreSheetTable", () => {
       vi.advanceTimersByTime(700);
 
       expect(mutateSpies.updateMatchRoundScore).toHaveBeenCalledWith({
-        match: matchOriginalFixture,
+        match: matchInputOriginal,
         type: "player",
         matchPlayerId: playerOriginalAlice.baseMatchPlayerId,
         round: { id: 1, score: null },
@@ -325,6 +358,20 @@ describe("ScoreSheetTable", () => {
     ).toBeInTheDocument();
   });
 
+  it("hides detail edit trigger when shared match is view-only", () => {
+    matchState.match = { ...matchSharedFixture, permissions: "view" };
+    mockState.playersAndTeams = {
+      players: [{ ...playerOriginalAlice, details: "note" }],
+      teams: [],
+    };
+
+    renderWithProviders(<ScoreSheetTable match={matchInputShared} />);
+
+    expect(
+      screen.queryByRole("button", { name: /edit player alice details/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("opens DetailDialog from the details row and can submit", async () => {
     const user = userEvent.setup();
     mockState.playersAndTeams = {
@@ -337,9 +384,13 @@ describe("ScoreSheetTable", () => {
 
     renderWithProviders(<ScoreSheetTable match={matchInputOriginal} />);
 
-    await user.click(screen.getByRole("button", { name: /my note/i }));
+    await user.click(
+      screen.getByRole("button", { name: /edit player alice details/i }),
+    );
 
-    expect(screen.getByRole("heading", { name: "Alice" })).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Player Alice Details" }),
+    ).toBeVisible();
   });
 
   it("shows aggregate totals for multi-round numeric scores", () => {
@@ -378,12 +429,8 @@ describe("ScoreSheetTable", () => {
 
     renderWithProviders(<ScoreSheetTable match={matchInputOriginal} />);
 
-    expect(
-      screen.getByRole("button", { name: /Team: Team A/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Charlie/i }),
-    ).toBeInTheDocument();
+    expect(getTeamColumnHeaderEditButton()).toBeInTheDocument();
+    expect(getPlayerColumnHeaderEditButton(/Charlie/i)).toBeInTheDocument();
     expect(screen.getByText("Round 1")).toBeInTheDocument();
   });
 
@@ -411,7 +458,7 @@ describe("ScoreSheetTable", () => {
     await user.tab();
 
     expect(mutateSpies.updateMatchPlayerOrTeamScore).toHaveBeenCalledWith({
-      match: matchOriginalFixture,
+      match: matchInputOriginal,
       type: "player",
       matchPlayerId: playerOriginalAlice.baseMatchPlayerId,
       score: 42,

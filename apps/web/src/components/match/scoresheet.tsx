@@ -112,6 +112,8 @@ function ScoreSheetTableManualSelector(input: { match: MatchInput }) {
 }
 function ManualScoreSheet(input: { match: MatchInput }) {
   const { match } = useMatch(input.match);
+  const matchCanEdit =
+    match.type === "original" || match.permissions === "edit";
   const { teams, players } = usePlayersAndTeams(input.match);
   const { gameRoles } = useGameRoles(
     match.game.type === "original"
@@ -225,6 +227,7 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                           </Label>
                           <DetailDialog
                             match={input.match}
+                            canEdit={matchCanEdit}
                             data={{
                               id: team.id,
                               name: team.name,
@@ -282,7 +285,11 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                                       Player Notes
                                     </Label>
                                     <DetailDialog
-                                      match={match}
+                                      match={input.match}
+                                      canEdit={
+                                        matchCanEdit &&
+                                        foundPlayer.permissions === "edit"
+                                      }
                                       data={{
                                         id: player.baseMatchPlayerId,
                                         name: player.name,
@@ -355,7 +362,10 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                             Player Notes
                           </Label>
                           <DetailDialog
-                            match={match}
+                            match={input.match}
+                            canEdit={
+                              matchCanEdit && player.permissions === "edit"
+                            }
                             data={{
                               id: player.baseMatchPlayerId,
                               name: player.name,
@@ -620,12 +630,20 @@ function ScoresheetFooter(input: { match: MatchInput }) {
           </Button>
         </div>
 
-        <Card className="pb-2">
+        <Card className="border-0 bg-transparent pb-2 shadow-none">
           <CardHeader className="pt-2 pb-0 sm:pt-4">
-            <CardTitle className="text-xl">Comment:</CardTitle>
+            <CardTitle className="text-muted-foreground text-xl font-medium">
+              Comment:
+            </CardTitle>
           </CardHeader>
-          <CardContent className="px-4">
-            <CommentDialog matchInput={input.match} comment={match.comment} />
+          <CardContent className="bg-transparent px-4">
+            <CommentDialog
+              matchInput={input.match}
+              comment={match.comment}
+              canEdit={
+                match.type === "original" || match.permissions === "edit"
+              }
+            />
           </CardContent>
         </Card>
         <Suspense fallback={null}>

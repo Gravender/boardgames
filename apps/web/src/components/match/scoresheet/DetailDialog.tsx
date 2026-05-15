@@ -1,27 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { z } from "zod/v4";
-
-import { Button } from "@board-games/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@board-games/ui/dialog";
-import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
+import { useCallback } from "react";
 
 import type { MatchInput } from "../types/input";
+import { MatchTextFieldDialog } from "~/components/match/match-text-field-dialog";
+import { MATCH_METADATA_AUTOSAVE_MS } from "~/hooks/match/autosave/constants";
 import { useUpdateMatchDetailsMutation } from "~/hooks/mutations/match/scoresheet";
-import { useAppForm } from "~/hooks/form";
 
 export function DetailDialog({
   match,
   data,
   placeholder,
+  canEdit,
 }: {
   match: MatchInput;
   data: {
@@ -31,113 +21,55 @@ export function DetailDialog({
     type: "player" | "team";
   };
   placeholder?: string;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger
-        render={
-          <Button
-            variant="ghost"
-            className="w-full min-w-20 items-start justify-start p-0 px-1"
-          >
-            <ScrollArea>
-              <div className="max-h-10 w-full">
-                {data.details && data.details !== "" ? (
-                  <p className="text-start text-wrap wrap-break-word whitespace-normal">
-                    {data.details}
-                  </p>
-                ) : (
-                  <p>{placeholder ?? ""}</p>
-                )}
-              </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          </Button>
-        }
-      />
-      <DialogContent>
-        <Content setIsOpen={setIsOpen} match={match} data={data} />
-      </DialogContent>
-    </Dialog>
-  );
-}
-const FormSchema = z.object({
-  detail: z.string(),
-});
-function Content({
-  match,
-  data,
-  setIsOpen,
-}: {
-  match: MatchInput;
-  data: {
-    id: number;
-    name: string;
-    details: string | null;
-    type: "player" | "team";
-  };
-  setIsOpen: (isOpen: boolean) => void;
+  canEdit: boolean;
 }) {
   const { updateMatchDetailsMutation } = useUpdateMatchDetailsMutation(match);
-  const form = useAppForm({
-    defaultValues: { detail: data.details ?? "" },
-    validators: {
-      onSubmit: FormSchema,
+
+  const onSave = useCallback(
+    async (normalized: string) => {
+      const details = normalized === "" ? null : normalized;
+      if (data.type === "player") {
+        await updateMatchDetailsMutation.mutateAsync({
+          type: "player",
+          match,
+          id: data.id,
+          details,
+        });
+      } else {
+        await updateMatchDetailsMutation.mutateAsync({
+          type: "team",
+          match,
+          teamId: data.id,
+          details,
+        });
+      }
     },
-    onSubmit: ({ value }) => {
-      const trimmedDetail = value.detail.trim();
-      const details = trimmedDetail === "" ? null : trimmedDetail;
-      updateMatchDetailsMutation.mutate(
-        data.type === "player"
-          ? {
-              type: "player",
-              match,
-              id: data.id,
-              details,
-            }
-          : {
-              type: "team",
-              match,
-              teamId: data.id,
-              details,
-            },
-        {
-          onSuccess: () => {
-            setIsOpen(false);
-          },
-        },
-      );
-    },
-  });
+    [data.id, data.type, match, updateMatchDetailsMutation],
+  );
+
+  const dialogTitle =
+    data.type === "team"
+      ? `Team ${data.name} Details`
+      : `Player ${data.name} Details`;
+
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>
-          {data.type === "team" ? `Team: ${data.name}` : data.name}
-        </DialogTitle>
-      </DialogHeader>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          await form.handleSubmit();
-        }}
-        className="space-y-8"
-      >
-        <form.AppField name="detail">
-          {(field) => <field.TextAreaField label="Details" rows={6} />}
-        </form.AppField>
-        <DialogFooter className="flex gap-2">
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={() => setIsOpen(false)}
-          >
-            Cancel
-          </Button>
-          <Button type="submit">Ok</Button>
-        </DialogFooter>
-      </form>
-    </>
+    <MatchTextFieldDialog
+      canEdit={canEdit}
+      serverValue={data.details}
+      debounceMs={MATCH_METADATA_AUTOSAVE_MS}
+      dialogTitle={dialogTitle}
+      fieldLabel="Details"
+      rows={6}
+      emptyLabel={placeholder ?? ""}
+      onSave={onSave}
+      isMutationPending={updateMatchDetailsMutation.isPending}
+      collapsedScrollable
+      collapsedScrollMaxClass="h-10 max-h-10"
+      dialogContentClassName="max-h-[min(92vh,900px)] w-full max-w-[min(36rem,calc(100vw-1rem))] gap-4 overflow-y-auto sm:max-w-xl"
+      dialogTextareaClassName="field-sizing-fixed max-h-[65vh] min-h-52 overflow-y-auto md:max-h-[50vh]"
+      className="h-full min-h-10 min-w-0 max-w-full overflow-hidden"
+      collapsedClassName="min-h-10 w-full min-w-0 border-0 bg-transparent px-2 py-1 text-start text-sm shadow-none"
+      triggerClassName="h-full min-h-10 w-full min-w-0 justify-start rounded-none border-0 bg-transparent p-0 shadow-none hover:bg-muted/30 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:bg-muted/20"
+    />
   );
 }

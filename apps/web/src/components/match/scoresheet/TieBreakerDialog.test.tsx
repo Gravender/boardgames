@@ -164,14 +164,18 @@ describe("TieBreakerDialog", () => {
 
     await user.click(screen.getByRole("button", { name: /Alice/i }));
 
-    const alicePlacement = await screen.findByRole("spinbutton");
+    const alicePlacement = await screen.findByRole("textbox", {
+      name: /placement/i,
+    });
     fireEvent.change(alicePlacement, { target: { value: "2" } });
     fireEvent.blur(alicePlacement);
     await user.keyboard("{Escape}");
 
     await user.click(screen.getByRole("button", { name: /Bob/i }));
 
-    const bobPlacement = await screen.findByRole("spinbutton");
+    const bobPlacement = await screen.findByRole("textbox", {
+      name: /placement/i,
+    });
     fireEvent.change(bobPlacement, { target: { value: "1" } });
     fireEvent.blur(bobPlacement);
     await user.keyboard("{Escape}");

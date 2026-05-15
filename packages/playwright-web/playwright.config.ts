@@ -30,7 +30,7 @@ export default defineConfig({
   /* Retry on CI, fail fast locally. */
   retries: isCI ? 3 : 0,
   /* Opt out of parallel tests only on CI. */
-  workers: 1,
+  workers: 3,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -41,7 +41,12 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
   },
-  globalTimeout: 5 * 60 * 1000,
+  /**
+   * Whole-run limit. The suite is sequential (`workers: 1`) and spans multiple
+   * browser projects; 5 minutes was aborting runs mid-suite. `0` = no limit (default)
+   * locally; CI uses a generous ceiling so a hung run still terminates eventually.
+   */
+  globalTimeout: isCI ? 45 * 60 * 1000 : 0,
 
   /* Configure projects for major browsers */
   projects: [

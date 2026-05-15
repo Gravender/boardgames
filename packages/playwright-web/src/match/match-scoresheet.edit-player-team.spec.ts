@@ -47,7 +47,10 @@ test.describe("Match Scoresheet Dialogs - Edit Player and Team", () => {
     await expect(page.getByRole("combobox").first()).toHaveText(/No team/);
     await page.getByRole("button", { name: "Cancel" }).click();
 
-    await page.getByRole("button", { name: "Team: Red Team" }).click();
+    // Substring matching would also match "Edit Team: Red Team"; require exact name.
+    await page
+      .getByRole("button", { name: "Team: Red Team", exact: true })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Edit Red Team" }),
     ).toBeVisible();

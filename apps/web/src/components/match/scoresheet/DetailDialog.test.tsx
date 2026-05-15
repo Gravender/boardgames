@@ -7,18 +7,13 @@ import { renderWithProviders } from "~/test";
 import { DetailDialog } from "./DetailDialog";
 import { matchInputOriginal } from "./scoresheet-test-fixtures";
 
-let lastMutateOptions: { onSuccess?: () => void } | undefined;
-
-const mutateMock = vi.fn(
-  (_vars: unknown, opts?: { onSuccess?: () => void }) => {
-    lastMutateOptions = opts;
-  },
-);
+const mutateMock = vi.fn(async () => {});
 
 vi.mock("~/hooks/mutations/match/scoresheet", () => ({
   useUpdateMatchDetailsMutation: () => ({
     updateMatchDetailsMutation: {
       mutate: mutateMock,
+      mutateAsync: mutateMock,
       isPending: false,
     },
   }),
@@ -26,61 +21,57 @@ vi.mock("~/hooks/mutations/match/scoresheet", () => ({
 
 describe("DetailDialog", () => {
   beforeEach(() => {
-    lastMutateOptions = undefined;
     mutateMock.mockClear();
   });
 
-  it("updates player details on submit", async () => {
-    const user = userEvent.setup();
+  it("autosaves player details after debounce", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
-    renderWithProviders(
-      <DetailDialog
-        match={matchInputOriginal}
-        data={{
-          id: 5,
-          name: "Alice",
-          details: "old note",
+      renderWithProviders(
+        <DetailDialog
+          match={matchInputOriginal}
+          canEdit
+          data={{
+            id: 5,
+            name: "Alice",
+            details: "old note",
+            type: "player",
+          }}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole("button", { name: /edit player alice details/i }),
+      );
+
+      const detailsField = screen.getByRole("textbox", { name: "Details" });
+      await user.clear(detailsField);
+      await user.type(detailsField, "  new bio  ");
+
+      vi.advanceTimersByTime(800);
+
+      await waitFor(() => {
+        expect(mutateMock).toHaveBeenCalledWith({
           type: "player",
-        }}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /old note/i }));
-
-    expect(screen.getByRole("heading", { name: "Alice" })).toBeVisible();
-
-    const detailsField = screen.getByRole("textbox", { name: "Details" });
-    await user.clear(detailsField);
-    await user.type(detailsField, "  new bio  ");
-
-    await user.click(screen.getByRole("button", { name: "Ok" }));
-
-    expect(mutateMock).toHaveBeenCalledWith(
-      {
-        type: "player",
-        match: matchInputOriginal,
-        id: 5,
-        details: "new bio",
-      },
-      expect.objectContaining({
-        onSuccess: expect.any(Function),
-      }),
-    );
-
-    expect(lastMutateOptions?.onSuccess).toBeDefined();
-    lastMutateOptions?.onSuccess?.();
-
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
+          match: matchInputOriginal,
+          id: 5,
+          details: "new bio",
+        });
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
-  it("updates team details on submit", async () => {
+  it("flushes team details on Done before debounce", async () => {
     const user = userEvent.setup();
 
     renderWithProviders(
       <DetailDialog
         match={matchInputOriginal}
+        canEdit
         data={{
           id: 9,
           name: "Bravo",
@@ -91,37 +82,34 @@ describe("DetailDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /empty/i }));
-
-    expect(screen.getByRole("heading", { name: "Team: Bravo" })).toBeVisible();
+    await user.click(
+      screen.getByRole("button", { name: /edit team bravo details/i }),
+    );
 
     const detailsField = screen.getByRole("textbox", { name: "Details" });
     await user.type(detailsField, "team notes");
 
-    await user.click(screen.getByRole("button", { name: "Ok" }));
+    await user.click(screen.getByRole("button", { name: "Done" }));
 
-    expect(mutateMock).toHaveBeenCalledWith(
-      {
-        type: "team",
-        match: matchInputOriginal,
-        teamId: 9,
-        details: "team notes",
-      },
-      expect.objectContaining({
-        onSuccess: expect.any(Function),
-      }),
-    );
+    expect(mutateMock).toHaveBeenCalledWith({
+      type: "team",
+      match: matchInputOriginal,
+      teamId: 9,
+      details: "team notes",
+    });
 
-    expect(lastMutateOptions?.onSuccess).toBeDefined();
-    lastMutateOptions?.onSuccess?.();
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
   });
 
-  it("closes on Cancel without calling the mutation", async () => {
+  it("closes on Cancel without saving when edits were not committed", async () => {
     const user = userEvent.setup();
 
     renderWithProviders(
       <DetailDialog
         match={matchInputOriginal}
+        canEdit
         data={{
           id: 5,
           name: "Alice",
@@ -131,17 +119,38 @@ describe("DetailDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /note/i }));
-    expect(screen.getByRole("heading", { name: "Alice" })).toBeVisible();
+    await user.click(
+      screen.getByRole("button", { name: /edit player alice details/i }),
+    );
+
+    const detailsField = screen.getByRole("textbox", { name: "Details" });
+    await user.type(detailsField, "x");
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(mutateMock).not.toHaveBeenCalled();
-    expect(lastMutateOptions).toBeUndefined();
     await waitFor(() => {
-      expect(
-        screen.queryByRole("heading", { name: "Alice" }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
+  });
+
+  it("does not expose an edit control when canEdit is false", () => {
+    renderWithProviders(
+      <DetailDialog
+        match={matchInputOriginal}
+        canEdit={false}
+        data={{
+          id: 5,
+          name: "Alice",
+          details: "look only",
+          type: "player",
+        }}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: /edit player alice details/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("look only")).toBeInTheDocument();
   });
 });
