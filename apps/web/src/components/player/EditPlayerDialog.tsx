@@ -58,7 +58,7 @@ type UpdatePlayerInput = RouterInputs["player"]["update"];
 const buildPlayerSchema = (
   player: EditPlayerDialogPlayer,
   initialImageUrl: string | null,
-) => {
+) : z.ZodType<PlayerValues, PlayerValues> => {
   return (
     player.type === "original" ? originalPlayerSchema : sharedPlayerSchema
   ).check((ctx) => {
@@ -340,18 +340,19 @@ const useEditPlayerForm = ({
   handleSubmitValues: (values: PlayerValues) => Promise<void>;
 }) => {
   const playerSchema = buildPlayerSchema(player, initialImageUrl);
+  const defaultValues: PlayerValues =
+    player.type === "original"
+      ? {
+          name: player.name,
+          imageUrl: initialImageUrl as File | string | null,
+        }
+      : {
+          name: player.name,
+          imageUrl: null,
+        };
 
   return useAppForm({
-    defaultValues:
-      player.type === "original"
-        ? {
-            name: player.name,
-            imageUrl: initialImageUrl as File | string | null,
-          }
-        : {
-            name: player.name,
-            imageUrl: null as File | string | null,
-          },
+    defaultValues,
     validators: {
       onSubmit: playerSchema,
     },

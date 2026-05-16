@@ -44,6 +44,15 @@ type Team = NonNullable<
 >["teams"][number];
 
 type TeamRole = OriginalRole | SharedRole;
+type TeamEditorFormValues = {
+  name: string;
+  roles: TeamRole[];
+  players: {
+    id: number;
+    name: string;
+    roles: TeamRole[];
+  }[];
+};
 
 export default function TeamEditorDialog({
   team,
@@ -165,25 +174,27 @@ function Content({
     ),
   });
 
-  const formSchema =
+  const formSchema: z.ZodType<TeamEditorFormValues, TeamEditorFormValues> =
     matchInput.type === "original"
       ? originalMatchFormSchema
       : sharedMatchFormSchema;
 
+  const defaultValues: TeamEditorFormValues = {
+    name: team.name,
+    players: players
+      .filter((player) => player.teamId === team.id)
+      .map((player) => {
+        return {
+          id: getPlayerFormId(player),
+          name: player.name,
+          roles: player.roles,
+        };
+      }),
+    roles: teamRoles,
+  };
+
   const form = useAppForm({
-    defaultValues: {
-      name: team.name,
-      players: players
-        .filter((player) => player.teamId === team.id)
-        .map((player) => {
-          return {
-            id: getPlayerFormId(player),
-            name: player.name,
-            roles: player.roles,
-          };
-        }),
-      roles: teamRoles,
-    } as z.infer<typeof formSchema>,
+    defaultValues,
     validators: {
       onSubmit: formSchema,
     },
