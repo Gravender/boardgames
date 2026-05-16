@@ -28,7 +28,6 @@
     "format:fix": "turbo run format:fix --continue",
     "lint": "turbo run lint --continue",
     "lint:fix": "turbo run lint:fix --continue",
-    "lint:ws": "pnpm dlx sherif@latest",
     "postinstall": "pnpm lint:ws",
     "prepare": "husky",
     "typecheck": "turbo run typecheck --filter=!native",
