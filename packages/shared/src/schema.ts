@@ -45,61 +45,66 @@ export const nonNullFileSchema = z
     },
   });
 export const fileSchema = nonNullFileSchema.nullable();
-export const baseGameSchema = z
-  .object({
-    name: z.string().min(1, {
-      message: "Game name is required",
-    }),
-    ownedBy: z.boolean(),
-    gameImg: fileSchema,
-    playersMin: z.number().min(1).nullable(),
-    playersMax: z.number().positive().nullable(),
-    playtimeMin: z.number().min(1).positive().nullable(),
-    playtimeMax: z.number().positive().nullable(),
-    yearPublished: z
-      .number()
-      .min(1900)
-      .max(new Date().getFullYear())
-      .nullable(),
-  })
-  .check((ctx) => {
+const baseGameObjectSchema = z.object({
+  name: z.string().min(1, {
+    message: "Game name is required",
+  }),
+  ownedBy: z.boolean(),
+  gameImg: fileSchema,
+  playersMin: z.number().min(1).nullable(),
+  playersMax: z.number().positive().nullable(),
+  playtimeMin: z.number().min(1).positive().nullable(),
+  playtimeMax: z.number().positive().nullable(),
+  yearPublished: z.number().min(1900).max(new Date().getFullYear()).nullable(),
+});
+
+const withGameBoundsValidation = <T extends z.ZodTypeAny>(schema: T) =>
+  schema.check((ctx) => {
+    const value = ctx.value as {
+      playersMin: number | null;
+      playersMax: number | null;
+      playtimeMin: number | null;
+      playtimeMax: number | null;
+    };
+
     if (
-      ctx.value.playersMin &&
-      ctx.value.playersMax &&
-      ctx.value.playersMin > ctx.value.playersMax
+      value.playersMin &&
+      value.playersMax &&
+      value.playersMin > value.playersMax
     ) {
       ctx.issues.push({
         code: "custom",
-        input: ctx.value,
+        input: value,
         message: "Players min must be less than or equal to players max.",
         path: ["playersMin"],
       });
       ctx.issues.push({
         code: "custom",
-        input: ctx.value,
+        input: value,
         message: "Playtime max must be greater than or equal to playtime min.",
         path: ["playtimeMax"],
       });
     }
     if (
-      ctx.value.playtimeMin &&
-      ctx.value.playtimeMax &&
-      ctx.value.playtimeMin > ctx.value.playtimeMax
+      value.playtimeMin &&
+      value.playtimeMax &&
+      value.playtimeMin > value.playtimeMax
     ) {
       ctx.issues.push({
         code: "custom",
-        input: ctx.value,
+        input: value,
         message: "Playtime min must be less than or equal to playtime max.",
         path: ["playtimeMin"],
       });
       ctx.issues.push({
         code: "custom",
-        input: ctx.value,
+        input: value,
         message: "Playtime max must be greater than or equal to playtime min.",
         path: ["playtimeMax"],
       });
     }
   });
+export const baseGameSchema = withGameBoundsValidation(baseGameObjectSchema);
 export const baseRoleSchema = selectGameRoleSchema.pick({
   name: true,
   description: true,
@@ -139,46 +144,52 @@ export const editRoleSchema = z.discriminatedUnion("type", [
     description: z.string().nullable(),
   }),
 ]);
-export const createGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
-  gameImg: z
-    .discriminatedUnion("type", [
-      z.object({
-        type: z.literal("file"),
-        file: nonNullFileSchema,
-      }),
-      z.object({
-        type: z.literal("svg"),
-        name: z.string().min(1, {
-          message: "SVG name is required",
+export const createGameSchema = withGameBoundsValidation(
+  baseGameObjectSchema.omit({ gameImg: true }).extend({
+    gameImg: z
+      .discriminatedUnion("type", [
+        z.object({
+          type: z.literal("file"),
+          file: nonNullFileSchema,
         }),
-      }),
-    ])
-    .nullable(),
-  roles: z.array(editRoleSchema),
-});
-
-export const editGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
-  gameImg: z
-    .discriminatedUnion("type", [
-      z.object({
-        type: z.literal("file"),
-        file: nonNullFileSchema.or(z.string()),
-      }),
-      z.object({
-        type: z.literal("svg"),
-        name: z.string().min(1, {
-          message: "SVG name is required",
+        z.object({
+          type: z.literal("svg"),
+          name: z.string().min(1, {
+            message: "SVG name is required",
+          }),
         }),
-      }),
-    ])
-    .nullable(),
-  roles: z.array(editRoleSchema),
-});
+      ])
+      .nullable(),
+    roles: z.array(editRoleSchema),
+  }),
+);
 
-export const sharedEditGameSchema = baseGameSchema.omit({
-  gameImg: true,
-  ownedBy: true,
-});
+export const editGameSchema = withGameBoundsValidation(
+  baseGameObjectSchema.omit({ gameImg: true }).extend({
+    gameImg: z
+      .discriminatedUnion("type", [
+        z.object({
+          type: z.literal("file"),
+          file: nonNullFileSchema.or(z.string()),
+        }),
+        z.object({
+          type: z.literal("svg"),
+          name: z.string().min(1, {
+            message: "SVG name is required",
+          }),
+        }),
+      ])
+      .nullable(),
+    roles: z.array(editRoleSchema),
+  }),
+);
+
+export const sharedEditGameSchema = withGameBoundsValidation(
+  baseGameObjectSchema.omit({
+    gameImg: true,
+    ownedBy: true,
+  }),
+);
 
 export const scoreSheetSchema = insertScoreSheetSchema
   .pick({
