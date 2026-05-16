@@ -25,6 +25,7 @@
     "@board-games/env": "workspace:*",
     "@board-games/file-upload": "workspace:*",
     "@board-games/shared": "workspace:*",
+    "@board-games/tailwind-config": "workspace:*",
     "@board-games/ui": "workspace:*",
     "@sentry/nextjs": "^10.46.0",
     "@tanstack/react-form": "catalog:",
@@ -54,7 +55,6 @@
   },
   "devDependencies": {
     "@board-games/config": "workspace:*",
-    "@board-games/tailwind-config": "workspace:*",
     "@spotlightjs/spotlight": "^3.0.2",
     "@tanstack/react-devtools": "catalog:",
     "@tanstack/react-form-devtools": "catalog:",

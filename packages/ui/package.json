@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
+    "@board-games/tailwind-config": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "class-variance-authority": "^0.7.0",
     "cmdk": "^1.1.1",
