@@ -2,40 +2,10 @@
   "name": "board-games",
   "private": true,
   "type": "module",
-  "packageManager": "bun@1.2.22",
+  "packageManager": "pnpm@10.19.0",
   "engines": {
-    "node": ">=22.21.0"
-  },
-  "workspaces": {
-    "packages": [
-      "apps/*",
-      "packages/*"
-    ],
-    "catalog": {
-      "@better-auth/cli": "1.4.0-beta.9",
-      "@better-auth/expo": "1.4.0-beta.9",
-      "@tailwindcss/postcss": "^4.1.16",
-      "@tanstack/react-devtools": "^0.7.11",
-      "@tanstack/react-form": "^1.28.5",
-      "@tanstack/react-form-devtools": "^0.1.8",
-      "@tanstack/react-pacer": "^0.21.1",
-      "@tanstack/react-query": "^5.95.2",
-      "@tanstack/react-query-devtools": "^5.95.2",
-      "@trpc/client": "^11.16.0",
-      "@trpc/server": "^11.16.0",
-      "@trpc/tanstack-react-query": "^11.16.0",
-      "@types/node": "^22.19.15",
-      "@types/react": "^19.1.17",
-      "@types/react-dom": "^19.1.11",
-      "better-auth": "1.4.0-beta.9",
-      "oxfmt": "^0.46.0",
-      "oxlint": "^1.61.0",
-      "react": "^19.1.4",
-      "react-dom": "^19.1.4",
-      "tailwindcss": "^4.2.2",
-      "typescript": "^6.0.3",
-      "zod": "4.1.12"
-    }
+    "node": ">=22.21.0",
+    "pnpm": "^10.19.0"
   },
   "scripts": {
     "build": "turbo run build",
@@ -58,8 +28,6 @@
     "format:fix": "turbo run format:fix --continue",
     "lint": "turbo run lint --continue",
     "lint:fix": "turbo run lint:fix --continue",
-    "lint:ws": "bunx sherif@latest",
-    "postinstall": "bun run lint:ws",
     "prepare": "husky",
     "typecheck": "turbo run typecheck --filter=!native",
     "test:api": "turbo run test --filter=@board-games/api",
@@ -70,13 +38,14 @@
   },
   "devDependencies": {
     "@board-games/config": "workspace:*",
-    "@turbo/gen": "^2.9.6",
+    "@turbo/gen": "^2.9.14",
     "dotenv": "^17.4.2",
+    "dotenv-cli": "^10.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
-    "turbo": "^2.9.6",
+    "turbo": "^2.9.14",
     "typescript": "^6.0.3",
     "zod": "catalog:"
   },
@@ -85,8 +54,5 @@
       "oxlint",
       "oxfmt --write"
     ]
-  },
-  "overrides": {
-    "@types/minimatch": "5.1.2"
   }
 }

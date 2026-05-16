@@ -80,7 +80,6 @@ export function PerformanceSummarySection({ data }: { data: Data }) {
           <div className="flex flex-wrap gap-1.5" role="list">
             {recentForm.map((r, i) => (
               <span
-                // oxlint-disable-next-line react/no-array-index-key
                 key={`${recentForm.slice(0, i + 1).join("")}`}
                 role="listitem"
                 className={cn(

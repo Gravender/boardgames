@@ -74,11 +74,10 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
          * Install deps and format everything
          */
         if ("name" in answers && typeof answers.name === "string") {
-          // execSync("pnpm dlx sherif@latest --fix", {
-          //   stdio: "inherit",
-          // });
-          execSync("bun install", { stdio: "inherit" });
-          execSync(`bunx oxfmt packages/${answers.name}`, { stdio: "inherit" });
+          execSync("pnpm i", { stdio: "inherit" });
+          execSync(`pnpm exec oxfmt packages/${answers.name}`, {
+            stdio: "inherit",
+          });
           return "Package scaffolded";
         }
         return "Package not scaffolded";

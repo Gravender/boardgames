@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@board-games/tailwind-config/theme";
 
 @source "../../../../apps/web/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";

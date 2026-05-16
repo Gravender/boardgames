@@ -31,5 +31,5 @@ Contract tests in `packages/api` assert that Zod output schemas still accept rep
 
 ## Local development and CI
 
-- **Type packages**: `@board-games/api` exposes `types` from `packages/api/dist/`. After changing `root.ts` or router types, run `bun run build` in `packages/api` so `dist/` matches (the folder is gitignored; CI should build before typechecking dependents).
-- **E2E**: Playwright needs browsers (`bunx playwright install` in `packages/playwright-web`). Run `bun run e2e` from the repo root after install; use `src/player/player.spec.ts` for player flows.
+- **Type packages**: `@board-games/api` exposes `types` from `packages/api/dist/`. After changing `root.ts` or router types, run `pnpm build` in `packages/api` so `dist/` matches (the folder is gitignored; CI should build before typechecking dependents).
+- **E2E**: Playwright needs browsers (`pnpm exec playwright install` in `packages/playwright-web`). Run `pnpm e2e` from the repo root after install; use `src/player/player.spec.ts` for player flows.

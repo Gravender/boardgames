@@ -14,7 +14,7 @@
     "format": "oxfmt --check .",
     "lint": "oxlint --report-unused-disable-directives",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
-    "e2e": "bunx playwright test",
+    "e2e": "playwright test",
     "format:fix": "oxfmt .",
     "lint:fix": "oxlint --fix --report-unused-disable-directives"
   },

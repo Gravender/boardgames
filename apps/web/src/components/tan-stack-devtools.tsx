@@ -1,7 +1,7 @@
 "use client";
 
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { FormDevtools } from "@tanstack/react-form-devtools";
+import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
 import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 
 export default function TanStackDevTools() {
@@ -17,11 +17,11 @@ export default function TanStackDevTools() {
           name: "TanStack Query",
           render: <ReactQueryDevtoolsPanel />,
         },
-        {
-          name: "TanStack Form",
-          render: <FormDevtools />,
-        },
+        formDevtoolsPlugin(),
       ]}
+      eventBusConfig={{
+        debug: true,
+      }}
     />
   );
 }
