@@ -28,7 +28,6 @@
     "format:fix": "turbo run format:fix --continue",
     "lint": "turbo run lint --continue",
     "lint:fix": "turbo run lint:fix --continue",
-    "postinstall": "pnpm lint:ws",
     "prepare": "husky",
     "typecheck": "turbo run typecheck --filter=!native",
     "test:api": "turbo run test --filter=@board-games/api",
