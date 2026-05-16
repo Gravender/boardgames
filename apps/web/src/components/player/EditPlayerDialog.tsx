@@ -58,7 +58,7 @@ type UpdatePlayerInput = RouterInputs["player"]["update"];
 const buildPlayerSchema = (
   player: EditPlayerDialogPlayer,
   initialImageUrl: string | null,
-) : z.ZodType<PlayerValues, PlayerValues> => {
+): z.ZodType<PlayerValues, PlayerValues> => {
   return (
     player.type === "original" ? originalPlayerSchema : sharedPlayerSchema
   ).check((ctx) => {

@@ -17,7 +17,7 @@ export default function TanStackDevTools() {
           name: "TanStack Query",
           render: <ReactQueryDevtoolsPanel />,
         },
-        formDevtoolsPlugin()
+        formDevtoolsPlugin(),
       ]}
       eventBusConfig={{
         debug: true,
