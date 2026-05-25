@@ -37,6 +37,50 @@ describe("scoresheet form rules", () => {
     });
   });
 
+  it("defaults unset rounds score from win condition", () => {
+    expect(
+      normalizeScoresheet({
+        scoresheet: {
+          name: "Co-op",
+          isCoop: true,
+          winCondition: "Manual",
+          targetScore: 0,
+        },
+        rounds: [],
+      }),
+    ).toEqual({
+      scoresheet: {
+        name: "Co-op",
+        isCoop: true,
+        winCondition: "Manual",
+        roundsScore: "Manual",
+        targetScore: 0,
+      },
+      rounds: [],
+    });
+
+    expect(
+      normalizeScoresheet({
+        scoresheet: {
+          name: "Competitive",
+          isCoop: false,
+          winCondition: "Highest Score",
+          targetScore: 0,
+        },
+        rounds: [],
+      }),
+    ).toEqual({
+      scoresheet: {
+        name: "Competitive",
+        isCoop: false,
+        winCondition: "Highest Score",
+        roundsScore: "Aggregate",
+        targetScore: 0,
+      },
+      rounds: [],
+    });
+  });
+
   it("removes invalid rounds score choices when win condition changes", () => {
     expect(
       getAllowedRoundsScoreOptions({ winCondition: "Highest Score" }),

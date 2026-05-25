@@ -64,13 +64,13 @@ export const normalizeScoresheet = <TScoresheet extends ScoresheetShape>(
   const allowedRoundsScoreOptions = getAllowedRoundsScoreOptions({
     winCondition: nextWinCondition,
   });
-  const nextRoundsScore = allowedRoundsScoreOptions.includes(
-    scoresheet.scoresheet.roundsScore ?? "Aggregate",
-  )
-    ? (scoresheet.scoresheet.roundsScore ?? "Aggregate")
-    : getDefaultRoundsScore({
-        winCondition: nextWinCondition,
-      });
+  const currentRoundsScore = scoresheet.scoresheet.roundsScore;
+  const nextRoundsScore =
+    currentRoundsScore == null
+      ? getDefaultRoundsScore({ winCondition: nextWinCondition })
+      : allowedRoundsScoreOptions.includes(currentRoundsScore)
+        ? currentRoundsScore
+        : getDefaultRoundsScore({ winCondition: nextWinCondition });
 
   const nextTargetScore =
     nextWinCondition === "Target Score"
