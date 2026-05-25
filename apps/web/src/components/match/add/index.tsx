@@ -139,7 +139,7 @@ function AddMatchContent({
         },
         {
           onSuccess: (response) => {
-            const targetGameId = response.sharedGame?.id ?? response.game?.id;
+            const targetGameId = response.game?.id;
             if (!targetGameId) {
               setShowAddMatchDialog(false);
               return;
