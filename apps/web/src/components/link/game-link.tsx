@@ -23,7 +23,13 @@ const getGameHref = (game: GameLinkGame): string => {
   return `/games/shared/${game.sharedGameId}${game.segment ? `/${game.segment}` : ""}`;
 };
 
-function GameLink({ layout, prefetch, className, children, game }: GameLinkProps) {
+function GameLink({
+  layout,
+  prefetch,
+  className,
+  children,
+  game,
+}: GameLinkProps) {
   const href = getGameHref(game);
   const linkProps = { prefetch, className, children };
 

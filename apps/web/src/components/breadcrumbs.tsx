@@ -65,11 +65,7 @@ const RenderBreadCrumbs = ({
                   <BreadcrumbPage>{item.name}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink
-                    render={
-                      <Link href={`/${item.path}`}>
-                        {item.name}
-                      </Link>
-                    }
+                    render={<Link href={`/${item.path}`}>{item.name}</Link>}
                   />
                 )}
               </BreadcrumbItem>

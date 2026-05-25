@@ -8,12 +8,7 @@ import { Link, type LinkProps } from "./link";
 
 type LinkButtonProps = LinkProps & VariantProps<typeof buttonVariants>;
 
-function LinkButton({
-  className,
-  variant,
-  size,
-  ...props
-}: LinkButtonProps) {
+function LinkButton({ className, variant, size, ...props }: LinkButtonProps) {
   return (
     <Link
       className={cn(buttonVariants({ variant, size, className }))}

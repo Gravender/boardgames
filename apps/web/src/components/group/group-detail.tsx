@@ -156,7 +156,6 @@ export const GroupDetail = ({ groupId }: { groupId: number }) => {
             {group.players.map((p) => (
               <li key={p.id}>
                 <Link
-                 
                   href={`/players/${p.id}/stats`}
                   className="border-border/60 from-card hover:border-primary/20 bg-linear-to-br group/row flex items-center gap-4 rounded-xl border p-4 shadow-sm transition-colors"
                 >

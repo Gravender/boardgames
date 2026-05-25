@@ -242,7 +242,6 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
                 {friend.linkedPlayer.matches.map((match) => (
                   <Link
                     key={`${match.id}-${match.type}`}
-                   
                     href={`/games${match.type === "Shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
                     className="hover:bg-muted/50 block h-40 w-64 rounded-lg border p-4 transition-colors"
                   >

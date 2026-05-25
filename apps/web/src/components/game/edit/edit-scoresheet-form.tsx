@@ -116,22 +116,31 @@ export const ScoresheetForm = withForm({
                           rounds: [],
                         });
 
-                        if (normalized.scoresheet.roundsScore !== current.scoresheet.roundsScore) {
+                        if (
+                          normalized.scoresheet.roundsScore !==
+                          current.scoresheet.roundsScore
+                        ) {
                           form.setFieldValue(
                             `scoresheets[${scoresheetIndex}].scoresheet.roundsScore`,
-                            normalized.scoresheet.roundsScore
+                            normalized.scoresheet.roundsScore,
                           );
                         }
-                        if (normalized.scoresheet.targetScore !== current.scoresheet.targetScore) {
+                        if (
+                          normalized.scoresheet.targetScore !==
+                          current.scoresheet.targetScore
+                        ) {
                           form.setFieldValue(
                             `scoresheets[${scoresheetIndex}].scoresheet.targetScore`,
-                            normalized.scoresheet.targetScore
+                            normalized.scoresheet.targetScore,
                           );
                         }
-                        if (normalized.scoresheet.winCondition !== current.scoresheet.winCondition) {
+                        if (
+                          normalized.scoresheet.winCondition !==
+                          current.scoresheet.winCondition
+                        ) {
                           form.setFieldValue(
                             `scoresheets[${scoresheetIndex}].scoresheet.winCondition`,
-                            normalized.scoresheet.winCondition
+                            normalized.scoresheet.winCondition,
                           );
                         }
                       },
@@ -155,13 +164,10 @@ export const ScoresheetForm = withForm({
                         form.setFieldValue(
                           "scoresheets",
                           normalizeDefaultScoresheets(
-                            form.getFieldValue(
-                              "scoresheets",
-                            ),
+                            form.getFieldValue("scoresheets"),
                             scoresheetIndex,
                           ),
                         );
-
                       },
                     }}
                   >
@@ -214,16 +220,22 @@ export const ScoresheetForm = withForm({
                           },
                           rounds: [],
                         });
-                        if (normalized.scoresheet.roundsScore !== current.scoresheet.roundsScore) {
+                        if (
+                          normalized.scoresheet.roundsScore !==
+                          current.scoresheet.roundsScore
+                        ) {
                           form.setFieldValue(
                             `scoresheets[${scoresheetIndex}].scoresheet.roundsScore`,
-                            normalized.scoresheet.roundsScore
+                            normalized.scoresheet.roundsScore,
                           );
                         }
-                        if (normalized.scoresheet.targetScore !== current.scoresheet.targetScore) {
+                        if (
+                          normalized.scoresheet.targetScore !==
+                          current.scoresheet.targetScore
+                        ) {
                           form.setFieldValue(
                             `scoresheets[${scoresheetIndex}].scoresheet.targetScore`,
-                            normalized.scoresheet.targetScore
+                            normalized.scoresheet.targetScore,
                           );
                         }
                       },

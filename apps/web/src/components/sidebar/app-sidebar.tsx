@@ -55,7 +55,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               size="sm"
               render={
                 <Link
-                 
                   href="/dashboard"
                   className="flex items-center justify-center p-2"
                 >

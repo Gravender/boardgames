@@ -111,7 +111,6 @@ export const GroupDropdown = ({
                   render={
                     <Link
                       href={`/groups/${group.id}`}
-                     
                       className="flex items-center gap-2"
                     >
                       <ExternalLink className="size-4 shrink-0" aria-hidden />

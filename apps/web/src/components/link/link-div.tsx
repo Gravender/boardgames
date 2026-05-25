@@ -20,10 +20,7 @@ type LinkDivProps = LinkProps & VariantProps<typeof linkDivVariants>;
 
 function LinkDiv({ className, layout, ...props }: LinkDivProps) {
   return (
-    <Link
-      className={cn(linkDivVariants({ layout }), className)}
-      {...props}
-    />
+    <Link className={cn(linkDivVariants({ layout }), className)} {...props} />
   );
 }
 

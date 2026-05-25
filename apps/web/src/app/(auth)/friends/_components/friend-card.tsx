@@ -73,7 +73,6 @@ export function FriendCard({ friend }: FriendCardProps) {
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <Link
-           
             href={`/friends/${friend.id}`}
             className="flex items-center gap-4"
           >

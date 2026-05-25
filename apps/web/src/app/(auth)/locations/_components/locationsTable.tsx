@@ -57,7 +57,6 @@ export function LocationsTable() {
               >
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
                   <Link
-                   
                     href={
                       location.type === "shared"
                         ? `/locations/shared/${location.sharedId}`

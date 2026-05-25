@@ -46,20 +46,12 @@ export function NavSecondary({
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton
-                    render={
-                      <Link href="/friends">
-                        Friends
-                      </Link>
-                    }
+                    render={<Link href="/friends">Friends</Link>}
                   />
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton
-                    render={
-                      <Link href="/share-requests">
-                        Share Requests
-                      </Link>
-                    }
+                    render={<Link href="/share-requests">Share Requests</Link>}
                   />
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
@@ -87,11 +79,7 @@ export function NavSecondary({
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton
-                    render={
-                      <Link href="/settings/profile">
-                        Profile
-                      </Link>
-                    }
+                    render={<Link href="/settings/profile">Profile</Link>}
                   />
                 </SidebarMenuSubItem>
               </SidebarMenuSub>

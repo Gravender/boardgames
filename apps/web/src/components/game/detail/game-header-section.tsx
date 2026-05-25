@@ -145,7 +145,9 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                         <DropdownMenuItem
                           render={
                             game.type === "original" ? (
-                              <GameLink game={{ gameId: game.id, segment: "edit" }}>
+                              <GameLink
+                                game={{ gameId: game.id, segment: "edit" }}
+                              >
                                 <PencilIcon className="mr-2 h-4 w-4" />
                                 Edit Game
                               </GameLink>
@@ -165,7 +167,9 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                         <DropdownMenuItem
                           render={
                             game.type === "original" ? (
-                              <GameLink game={{ gameId: game.id, segment: "roles" }}>
+                              <GameLink
+                                game={{ gameId: game.id, segment: "roles" }}
+                              >
                                 <UserCog className="mr-2 h-4 w-4" />
                                 Edit Roles
                               </GameLink>
@@ -189,7 +193,9 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                         {canEdit && <DropdownMenuSeparator />}
                         <DropdownMenuItem
                           render={
-                            <GameLink game={{ gameId: game.id, segment: "share" }}>
+                            <GameLink
+                              game={{ gameId: game.id, segment: "share" }}
+                            >
                               <Share2 className="mr-2 h-4 w-4" />
                               Share Game
                             </GameLink>
