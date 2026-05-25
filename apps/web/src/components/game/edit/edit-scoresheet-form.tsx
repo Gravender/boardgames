@@ -107,20 +107,33 @@ export const ScoresheetForm = withForm({
                         if (!current) {
                           return;
                         }
-                        form.setFieldValue(
-                          "scoresheets",
-                          scoresheets.map((scoresheet, index) =>
-                            index === scoresheetIndex
-                              ? normalizeScoresheet({
-                                  ...scoresheet,
-                                  scoresheet: {
-                                    ...current.scoresheet,
-                                    isCoop: fieldApi.state.value,
-                                  },
-                                })
-                              : scoresheet,
-                          ),
-                        );
+                        const normalized = normalizeScoresheet({
+                          ...current,
+                          scoresheet: {
+                            ...current.scoresheet,
+                            isCoop: fieldApi.state.value,
+                          },
+                          rounds: [],
+                        });
+
+                        if (normalized.scoresheet.roundsScore !== current.scoresheet.roundsScore) {
+                          form.setFieldValue(
+                            `scoresheets[${scoresheetIndex}].scoresheet.roundsScore`,
+                            normalized.scoresheet.roundsScore
+                          );
+                        }
+                        if (normalized.scoresheet.targetScore !== current.scoresheet.targetScore) {
+                          form.setFieldValue(
+                            `scoresheets[${scoresheetIndex}].scoresheet.targetScore`,
+                            normalized.scoresheet.targetScore
+                          );
+                        }
+                        if (normalized.scoresheet.winCondition !== current.scoresheet.winCondition) {
+                          form.setFieldValue(
+                            `scoresheets[${scoresheetIndex}].scoresheet.winCondition`,
+                            normalized.scoresheet.winCondition
+                          );
+                        }
                       },
                     }}
                   >
@@ -144,10 +157,11 @@ export const ScoresheetForm = withForm({
                           normalizeDefaultScoresheets(
                             form.getFieldValue(
                               "scoresheets",
-                            ) as EditGameFormValues["scoresheets"],
+                            ),
                             scoresheetIndex,
                           ),
                         );
+
                       },
                     }}
                   >
@@ -192,21 +206,26 @@ export const ScoresheetForm = withForm({
                         if (!current) {
                           return;
                         }
-                        form.setFieldValue(
-                          "scoresheets",
-                          scoresheets.map((scoresheet, index) =>
-                            index === scoresheetIndex
-                              ? normalizeScoresheet({
-                                  ...scoresheet,
-                                  scoresheet: {
-                                    ...current.scoresheet,
-                                    winCondition:
-                                      fieldApi.state.value ?? "Highest Score",
-                                  },
-                                })
-                              : scoresheet,
-                          ),
-                        );
+                        const normalized = normalizeScoresheet({
+                          ...current,
+                          scoresheet: {
+                            ...current.scoresheet,
+                            winCondition: fieldApi.state.value,
+                          },
+                          rounds: [],
+                        });
+                        if (normalized.scoresheet.roundsScore !== current.scoresheet.roundsScore) {
+                          form.setFieldValue(
+                            `scoresheets[${scoresheetIndex}].scoresheet.roundsScore`,
+                            normalized.scoresheet.roundsScore
+                          );
+                        }
+                        if (normalized.scoresheet.targetScore !== current.scoresheet.targetScore) {
+                          form.setFieldValue(
+                            `scoresheets[${scoresheetIndex}].scoresheet.targetScore`,
+                            normalized.scoresheet.targetScore
+                          );
+                        }
                       },
                     }}
                     validators={{
