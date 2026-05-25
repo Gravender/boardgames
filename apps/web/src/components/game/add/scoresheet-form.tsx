@@ -2,10 +2,6 @@
 
 import { usePostHog } from "posthog-js/react";
 
-import {
-  scoreSheetRoundsScore,
-  scoreSheetWinConditions,
-} from "@board-games/db/constants";
 import { Button } from "@board-games/ui/button";
 import { CardContent } from "@board-games/ui/card";
 import { DialogFooter } from "@board-games/ui/dialog";
@@ -27,17 +23,14 @@ import { toast } from "@board-games/ui/toast";
 
 import type { AddGameFormValues } from "./add-game.types";
 import { withForm } from "~/hooks/form";
+import {
+  getAllowedRoundsScoreOptions,
+  getAllowedWinConditions,
+  normalizeScoresheet,
+} from "~/lib/scoresheet-form-rules";
 import { addGameFormSchema } from "./add-game.types";
 import { AddRoundsForm } from "./add-rounds-form";
 
-const winConditionOptions = scoreSheetWinConditions;
-const roundsScoreOptions: (typeof scoreSheetRoundsScore)[number][] =
-  scoreSheetRoundsScore.filter((option) => option !== "None");
-const manualWinConditionOptions = scoreSheetRoundsScore;
-const coopWinConditionOptions: (typeof scoreSheetWinConditions)[number][] = [
-  "Manual",
-  "Target Score",
-];
 export const ScoresheetForm = withForm({
   defaultValues: {} as AddGameFormValues,
   validators: {
@@ -73,6 +66,19 @@ export const ScoresheetForm = withForm({
             if (scoresheetIndex === undefined) {
               return null;
             }
+
+            const isCoop = form.getFieldValue(
+              `scoresheets[${scoresheetIndex}].scoresheet.isCoop`,
+            );
+            const winCondition =
+              form.getFieldValue(
+                `scoresheets[${scoresheetIndex}].scoresheet.winCondition`,
+              ) ?? "Highest Score";
+            const winConditionChoices = getAllowedWinConditions({ isCoop });
+            const roundsScoreChoices = getAllowedRoundsScoreOptions({
+              winCondition,
+            });
+
             return (
               <>
                 <CardContent className="flex flex-col gap-2 px-2 sm:gap-4 sm:px-6">
@@ -90,6 +96,31 @@ export const ScoresheetForm = withForm({
 
                   <form.AppField
                     name={`scoresheets[${scoresheetIndex}].scoresheet.isCoop`}
+                    listeners={{
+                      onChange: ({ fieldApi }) => {
+                        const scoresheets = form.getFieldValue(
+                          "scoresheets",
+                        ) as AddGameFormValues["scoresheets"];
+                        const current = scoresheets[scoresheetIndex];
+                        if (!current) {
+                          return;
+                        }
+                        form.setFieldValue(
+                          "scoresheets",
+                          scoresheets.map((scoresheet, index) =>
+                            index === scoresheetIndex
+                              ? normalizeScoresheet({
+                                  ...scoresheet,
+                                  scoresheet: {
+                                    ...current.scoresheet,
+                                    isCoop: fieldApi.state.value,
+                                  },
+                                })
+                              : scoresheet,
+                          ),
+                        );
+                      },
+                    }}
                   >
                     {(field) => (
                       <field.CheckboxField
@@ -101,6 +132,32 @@ export const ScoresheetForm = withForm({
 
                   <form.AppField
                     name={`scoresheets[${scoresheetIndex}].scoresheet.winCondition`}
+                    listeners={{
+                      onChange: ({ fieldApi }) => {
+                        const scoresheets = form.getFieldValue(
+                          "scoresheets",
+                        ) as AddGameFormValues["scoresheets"];
+                        const current = scoresheets[scoresheetIndex];
+                        if (!current) {
+                          return;
+                        }
+                        form.setFieldValue(
+                          "scoresheets",
+                          scoresheets.map((scoresheet, index) =>
+                            index === scoresheetIndex
+                              ? normalizeScoresheet({
+                                  ...scoresheet,
+                                  scoresheet: {
+                                    ...current.scoresheet,
+                                    winCondition:
+                                      fieldApi.state.value ?? "Highest Score",
+                                  },
+                                })
+                              : scoresheet,
+                          ),
+                        );
+                      },
+                    }}
                     validators={{
                       onChangeListenTo: [
                         `scoresheets[${scoresheetIndex}].scoresheet.isCoop`,
@@ -126,11 +183,6 @@ export const ScoresheetForm = withForm({
                   >
                     {(field) => {
                       const isInvalid = !field.state.meta.isValid;
-                      const options = form.getFieldValue(
-                        `scoresheets[${scoresheetIndex}].scoresheet.isCoop`,
-                      )
-                        ? coopWinConditionOptions
-                        : winConditionOptions;
                       return (
                         <Field data-invalid={isInvalid}>
                           <FieldLabel htmlFor={field.name}>
@@ -139,7 +191,7 @@ export const ScoresheetForm = withForm({
                           <Select
                             value={field.state.value}
                             onValueChange={(value) => {
-                              const safeValue = scoreSheetWinConditions.find(
+                              const safeValue = winConditionChoices.find(
                                 (condition) => condition === value,
                               );
                               if (safeValue) {
@@ -161,7 +213,7 @@ export const ScoresheetForm = withForm({
                               <SelectValue placeholder="Select a win condition" />
                             </SelectTrigger>
                             <SelectContent>
-                              {options.map((condition) => (
+                              {winConditionChoices.map((condition) => (
                                 <SelectItem key={condition} value={condition}>
                                   {condition}
                                 </SelectItem>
@@ -176,9 +228,7 @@ export const ScoresheetForm = withForm({
                     }}
                   </form.AppField>
 
-                  {form.getFieldValue(
-                    `scoresheets[${scoresheetIndex}].scoresheet.winCondition`,
-                  ) === "Target Score" && (
+                  {winCondition === "Target Score" && (
                     <form.AppField
                       name={`scoresheets[${scoresheetIndex}].scoresheet.targetScore`}
                     >
@@ -236,12 +286,6 @@ export const ScoresheetForm = withForm({
                   >
                     {(field) => {
                       const isInvalid = !field.state.meta.isValid;
-                      const options =
-                        form.getFieldValue(
-                          `scoresheets[${scoresheetIndex}].scoresheet.winCondition`,
-                        ) === "Manual"
-                          ? manualWinConditionOptions
-                          : roundsScoreOptions;
                       return (
                         <Field data-invalid={isInvalid}>
                           <FieldLabel htmlFor={field.name}>
@@ -253,7 +297,7 @@ export const ScoresheetForm = withForm({
                           <Select
                             value={field.state.value}
                             onValueChange={(value) => {
-                              const safeValue = options.find(
+                              const safeValue = roundsScoreChoices.find(
                                 (option) => option === value,
                               );
                               if (safeValue) {
@@ -275,7 +319,7 @@ export const ScoresheetForm = withForm({
                               <SelectValue placeholder="Select a scoring method" />
                             </SelectTrigger>
                             <SelectContent>
-                              {options.map((condition) => (
+                              {roundsScoreChoices.map((condition) => (
                                 <SelectItem key={condition} value={condition}>
                                   {condition}
                                 </SelectItem>
