@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "~/components/link";
 import {
   ExternalLink,
   MoreVertical,
@@ -111,7 +111,6 @@ export const GroupDropdown = ({
                   render={
                     <Link
                       href={`/groups/${group.id}`}
-                      prefetch={true}
                       className="flex items-center gap-2"
                     >
                       <ExternalLink className="size-4 shrink-0" aria-hidden />

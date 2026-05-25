@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { MatchLink } from "~/components/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   BookText,
@@ -67,62 +67,92 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
           {match.type === "original" && (
             <DropdownMenuItem
               render={
-                <Link
-                  prefetch={true}
-                  href={`/games/${match.game.id}/${match.id}/edit`}
+                <MatchLink
+                  match={{
+                    gameId: match.game.id,
+                    matchId: match.id,
+                    segment: "edit",
+                  }}
                   className="flex items-center gap-2"
                 >
                   <PencilIcon className="mr-2 h-4 w-4" />
                   Edit
-                </Link>
+                </MatchLink>
               }
             />
           )}
           {match.type === "shared" && match.permissions === "edit" && (
             <DropdownMenuItem
               render={
-                <Link
-                  prefetch={true}
-                  href={`/games/shared/${match.game.sharedGameId}/${match.id}/edit`}
+                <MatchLink
+                  match={{
+                    sharedGameId: match.game.sharedGameId,
+                    sharedMatchId: match.id,
+                    segment: "edit",
+                  }}
                   className="flex items-center gap-2"
                 >
                   <PencilIcon className="mr-2 h-4 w-4" />
                   Edit
-                </Link>
+                </MatchLink>
               }
             />
           )}
           <DropdownMenuItem
             render={
-              <Link
-                prefetch={true}
-                href={
-                  match.type === "shared"
-                    ? `/games/shared/${match.game.sharedGameId}/${match.id}`
-                    : `/games/${match.game.id}/${match.id}`
-                }
-                className="flex items-center gap-2"
-              >
-                <Table className="mr-2 h-4 w-4" />
-                ScoreSheet
-              </Link>
+              match.type === "shared" ? (
+                <MatchLink
+                  match={{
+                    sharedGameId: match.game.sharedGameId,
+                    sharedMatchId: match.id,
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Table className="mr-2 h-4 w-4" />
+                  ScoreSheet
+                </MatchLink>
+              ) : (
+                <MatchLink
+                  match={{
+                    gameId: match.game.id,
+                    matchId: match.id,
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Table className="mr-2 h-4 w-4" />
+                  ScoreSheet
+                </MatchLink>
+              )
             }
           />
           {match.finished && (
             <DropdownMenuItem
               render={
-                <Link
-                  prefetch={true}
-                  href={
-                    match.type === "shared"
-                      ? `/games/shared/${match.game.sharedGameId}/${match.id}/summary`
-                      : `/games/${match.game.id}/${match.id}/summary`
-                  }
-                  className="flex items-center gap-2"
-                >
-                  <BookText className="mr-2 h-4 w-4" />
-                  Summary
-                </Link>
+                match.type === "shared" ? (
+                  <MatchLink
+                    match={{
+                      sharedGameId: match.game.sharedGameId,
+                      sharedMatchId: match.id,
+                      segment: "summary",
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <BookText className="mr-2 h-4 w-4" />
+                    Summary
+                  </MatchLink>
+                ) : (
+                  <MatchLink
+                    match={{
+                      gameId: match.game.id,
+                      matchId: match.id,
+                      segment: "summary",
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <BookText className="mr-2 h-4 w-4" />
+                    Summary
+                  </MatchLink>
+                )
               }
             />
           )}
@@ -130,14 +160,17 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
             <>
               <DropdownMenuItem
                 render={
-                  <Link
-                    prefetch={true}
-                    href={`/games/${match.game.id}/${match.id}/share`}
+                  <MatchLink
+                    match={{
+                      gameId: match.game.id,
+                      matchId: match.id,
+                      segment: "share",
+                    }}
                     className="flex items-center gap-2"
                   >
                     <Link2Icon className="mr-2 h-4 w-4" />
                     Share
-                  </Link>
+                  </MatchLink>
                 }
               />
               <DropdownMenuSeparator />

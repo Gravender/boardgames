@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { ClockIcon, GamepadIcon, MapPinIcon, UsersIcon } from "lucide-react";
 
@@ -13,6 +12,7 @@ import {
 } from "@board-games/ui/item";
 
 import { GameImage } from "~/components/game-image";
+import { GameLinkFromEntity } from "~/components/link";
 import { GamesDropDown } from "./games-dropdown";
 
 interface GameCardProps {
@@ -52,10 +52,7 @@ export function GameItem({ game }: GameCardProps) {
       data-testid="game-card"
       className="hover:bg-muted/50 transition-colors"
     >
-      <Link
-        href={`/games/${game.type === "shared" ? "shared/" : ""}${game.id}`}
-        className="flex min-w-0 flex-1 items-center gap-4"
-      >
+      <GameLinkFromEntity layout="row" type={game.type} gameId={game.id}>
         <GameImage
           image={game.image}
           alt={`${game.name} game image`}
@@ -111,7 +108,7 @@ export function GameItem({ game }: GameCardProps) {
             </span>
           </ItemDescription>
         </ItemContent>
-      </Link>
+      </GameLinkFromEntity>
 
       <ItemActions>
         <GamesDropDown data={game} />

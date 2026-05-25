@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { GameLink } from "~/components/link";
 import {
   BarChart3,
   Calendar,
@@ -100,16 +100,29 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
               </div>
 
               <div className="flex items-center gap-2">
-                <Link
-                  href={`/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/stats`}
-                  className={buttonVariants({
-                    variant: "outline",
-                    size: "sm",
-                  })}
-                >
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Stats
-                </Link>
+                {game.type === "original" ? (
+                  <GameLink
+                    game={{ gameId: game.id, segment: "stats" }}
+                    className={buttonVariants({
+                      variant: "outline",
+                      size: "sm",
+                    })}
+                  >
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Stats
+                  </GameLink>
+                ) : (
+                  <GameLink
+                    game={{ sharedGameId: game.sharedGameId, segment: "stats" }}
+                    className={buttonVariants({
+                      variant: "outline",
+                      size: "sm",
+                    })}
+                  >
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Stats
+                  </GameLink>
+                )}
 
                 <DropdownMenu>
                   <DropdownMenuTrigger
@@ -131,22 +144,46 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                       <>
                         <DropdownMenuItem
                           render={
-                            <Link
-                              href={`/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/edit`}
-                            >
-                              <PencilIcon className="mr-2 h-4 w-4" />
-                              Edit Game
-                            </Link>
+                            game.type === "original" ? (
+                              <GameLink
+                                game={{ gameId: game.id, segment: "edit" }}
+                              >
+                                <PencilIcon className="mr-2 h-4 w-4" />
+                                Edit Game
+                              </GameLink>
+                            ) : (
+                              <GameLink
+                                game={{
+                                  sharedGameId: game.sharedGameId,
+                                  segment: "edit",
+                                }}
+                              >
+                                <PencilIcon className="mr-2 h-4 w-4" />
+                                Edit Game
+                              </GameLink>
+                            )
                           }
                         />
                         <DropdownMenuItem
                           render={
-                            <Link
-                              href={`/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/roles`}
-                            >
-                              <UserCog className="mr-2 h-4 w-4" />
-                              Edit Roles
-                            </Link>
+                            game.type === "original" ? (
+                              <GameLink
+                                game={{ gameId: game.id, segment: "roles" }}
+                              >
+                                <UserCog className="mr-2 h-4 w-4" />
+                                Edit Roles
+                              </GameLink>
+                            ) : (
+                              <GameLink
+                                game={{
+                                  sharedGameId: game.sharedGameId,
+                                  segment: "roles",
+                                }}
+                              >
+                                <UserCog className="mr-2 h-4 w-4" />
+                                Edit Roles
+                              </GameLink>
+                            )
                           }
                         />
                       </>
@@ -156,10 +193,12 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                         {canEdit && <DropdownMenuSeparator />}
                         <DropdownMenuItem
                           render={
-                            <Link href={`/games/${game.id}/share`}>
+                            <GameLink
+                              game={{ gameId: game.id, segment: "share" }}
+                            >
                               <Share2 className="mr-2 h-4 w-4" />
                               Share Game
-                            </Link>
+                            </GameLink>
                           }
                         />
                       </>

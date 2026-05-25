@@ -1,5 +1,5 @@
 import type * as React from "react";
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { Calendar1, Dices, MapPin, User, UsersRound } from "lucide-react";
 
 import {
@@ -55,7 +55,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               size="sm"
               render={
                 <Link
-                  prefetch={true}
                   href="/dashboard"
                   className="flex items-center justify-center p-2"
                 >

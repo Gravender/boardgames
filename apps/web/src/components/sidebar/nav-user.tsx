@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, ChevronsUpDown, LogOut } from "lucide-react";
 

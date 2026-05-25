@@ -46,7 +46,7 @@ import {
   useScoresheet,
 } from "~/hooks/queries/match/match";
 import { useTRPC } from "~/trpc/react";
-import { formatMatchLink } from "~/utils/linkFormatting";
+import { getMatchHref } from "~/components/link";
 import { FormattedDate } from "../formatted-date";
 import { DetailDialog } from "./scoresheet/DetailDialog";
 import PlayerEditorDialog from "./scoresheet/edit-player-dialog";
@@ -429,21 +429,18 @@ function ScoresheetFooter(input: { match: MatchInput }) {
   const { updateFinishMutation } = useUpdateFinish(input.match, () => {
     if (match.type === "original") {
       router.push(
-        formatMatchLink({
+        getMatchHref({
           matchId: match.id,
           gameId: match.game.id,
-          type: "original",
-          finished: true,
+          segment: "summary",
         }),
       );
     } else {
       router.push(
-        formatMatchLink({
+        getMatchHref({
           sharedMatchId: match.sharedMatchId,
           sharedGameId: match.game.sharedGameId,
-          linkedGameId: match.game.linkedGameId,
-          type: match.game.type,
-          finished: true,
+          segment: "summary",
         }),
       );
     }

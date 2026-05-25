@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import Link from "next/link";
+import { Link } from "~/components/link";
 
 import {
   SidebarGroup,
@@ -25,7 +25,7 @@ export function NavMain({
             <SidebarMenuButton
               size="sm"
               render={
-                <Link prefetch={true} href={item.url}>
+                <Link href={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
                 </Link>

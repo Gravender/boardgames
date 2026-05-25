@@ -1,5 +1,7 @@
 import type { RouterOutputs } from "@board-games/api";
 
+import { getMatchHref } from "~/components/link";
+
 type PlayerIdentity =
   RouterOutputs["player"]["stats"]["getPlayerTopRivals"]["rivals"][number]["opponent"];
 
@@ -18,12 +20,20 @@ type MatchEntryForInsightHref =
 export const insightMatchHref = (match: MatchEntryForInsightHref): string => {
   if (match.type === "shared") {
     if (match.game.type === "shared") {
-      return `/games/shared/${match.game.sharedGameId}/${match.sharedMatchId}/summary`;
+      return getMatchHref({
+        sharedGameId: match.game.sharedGameId,
+        sharedMatchId: match.sharedMatchId,
+        segment: "summary",
+      });
     }
     return "";
   }
   if (match.game.type === "shared") {
     return "";
   }
-  return `/games/${match.game.id}/${match.matchId}/summary`;
+  return getMatchHref({
+    gameId: match.game.id,
+    matchId: match.matchId,
+    segment: "summary",
+  });
 };

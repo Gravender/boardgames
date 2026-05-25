@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, LayoutGrid, Pencil, Trophy, Users } from "lucide-react";
 
@@ -156,7 +156,6 @@ export const GroupDetail = ({ groupId }: { groupId: number }) => {
             {group.players.map((p) => (
               <li key={p.id}>
                 <Link
-                  prefetch={true}
                   href={`/players/${p.id}/stats`}
                   className="border-border/60 from-card hover:border-primary/20 bg-linear-to-br group/row flex items-center gap-4 rounded-xl border p-4 shadow-sm transition-colors"
                 >

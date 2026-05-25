@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { MapPin, Search } from "lucide-react";
 
@@ -57,7 +57,6 @@ export function LocationsTable() {
               >
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
                   <Link
-                    prefetch={true}
                     href={
                       location.type === "shared"
                         ? `/locations/shared/${location.sharedId}`

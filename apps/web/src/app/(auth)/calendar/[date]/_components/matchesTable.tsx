@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { MatchLink } from "~/components/link";
 import { format } from "date-fns/format";
 import { Calendar, Clock, MapPin } from "lucide-react";
 
@@ -13,7 +13,6 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { GameImage } from "~/components/game-image";
-import { formatMatchLink } from "~/utils/linkFormatting";
 import { PlayerStats } from "./player-stats";
 
 type Matches = NonNullable<
@@ -61,23 +60,20 @@ export function MatchesTable({
             <div className="flex w-full flex-col gap-2 p-4">
               {matches.map((match) => (
                 <Card key={`${match.id}-${match.type}`} className="flex w-full">
-                  <Link
-                    href={formatMatchLink(
+                  <MatchLink
+                    match={
                       match.type === "shared"
                         ? {
                             sharedMatchId: match.id,
-                            sharedGameId: match.game.id,
-                            linkedGameId: match.game.linkedGameId,
-                            type: match.type,
-                            finished: match.finished,
+                            sharedGameId: match.game.sharedGameId,
+                            segment: match.finished ? "summary" : undefined,
                           }
                         : {
-                            matchId: match.id,
                             gameId: match.game.id,
-                            type: match.type,
-                            finished: match.finished,
-                          },
-                    )}
+                            matchId: match.id,
+                            segment: match.finished ? "summary" : undefined,
+                          }
+                    }
                     className="flex w-full items-center gap-3 font-medium"
                   >
                     <GameImage
@@ -114,7 +110,7 @@ export function MatchesTable({
                         </div>
                       </div>
                     </div>
-                  </Link>
+                  </MatchLink>
                   <div className="flex w-24 items-center justify-center">
                     {!match.finished ? (
                       <div className="text-destructive-foreground inline-flex w-12 items-center justify-center rounded-sm bg-yellow-500 p-2 font-semibold dark:bg-yellow-900">

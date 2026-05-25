@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { Dices, GamepadIcon, PlusCircle, Users } from "lucide-react";
 
 import { Button } from "@board-games/ui/button";
@@ -54,7 +54,7 @@ export function EmptyDashboard() {
             </p>
           </CardContent>
           <CardFooter>
-            <Link prefetch={true} href="/games?add=true" className="w-full">
+            <Link href="/games?add=true" className="w-full">
               <Button className="w-full gap-2">
                 <PlusCircle className="h-4 w-4" /> Add Game
               </Button>
@@ -77,7 +77,7 @@ export function EmptyDashboard() {
             </p>
           </CardContent>
           <CardFooter>
-            <Link prefetch={true} href="/players?add=true" className="w-full">
+            <Link href="/players?add=true" className="w-full">
               <Button className="w-full gap-2">
                 <PlusCircle className="h-4 w-4" /> Add Players
               </Button>

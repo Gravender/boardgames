@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
@@ -65,11 +65,7 @@ const RenderBreadCrumbs = ({
                   <BreadcrumbPage>{item.name}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink
-                    render={
-                      <Link prefetch={true} href={`/${item.path}`}>
-                        {item.name}
-                      </Link>
-                    }
+                    render={<Link href={`/${item.path}`}>{item.name}</Link>}
                   />
                 )}
               </BreadcrumbItem>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { GameLink } from "~/components/link";
 import {
   BarChart2Icon,
   Link2Icon,
@@ -65,31 +65,33 @@ export function GamesDropDown({
 
             <DropdownMenuItem
               render={
-                <Link
-                  prefetch={true}
-                  href={`/games/${data.type === "shared" ? "shared/" : ""}${data.id}/edit`}
+                <GameLink
+                  game={
+                    data.type === "shared"
+                      ? { sharedGameId: data.id, segment: "edit" }
+                      : { gameId: data.id, segment: "edit" }
+                  }
                   className="flex items-center gap-2"
                 >
                   <PencilIcon className="h-4 w-4" />
                   Edit
-                </Link>
+                </GameLink>
               }
             />
 
             <DropdownMenuItem
               render={
-                <Link
-                  prefetch={true}
-                  href={
+                <GameLink
+                  game={
                     data.type === "shared"
-                      ? `/games/shared/${data.id}/stats`
-                      : `/games/${data.id}/stats`
+                      ? { sharedGameId: data.id, segment: "stats" }
+                      : { gameId: data.id, segment: "stats" }
                   }
                   className="flex items-center gap-2"
                 >
                   <BarChart2Icon className="h-4 w-4" />
                   View Stats
-                </Link>
+                </GameLink>
               }
             />
             {/* <DropdownMenuItem>
@@ -102,14 +104,13 @@ export function GamesDropDown({
               <>
                 <DropdownMenuItem
                   render={
-                    <Link
-                      prefetch={true}
-                      href={`/games/${data.id}/share`}
+                    <GameLink
+                      game={{ gameId: data.id, segment: "share" }}
                       className="flex items-center gap-2"
                     >
                       <Link2Icon className="h-4 w-4" />
                       Share
-                    </Link>
+                    </GameLink>
                   }
                 />
                 <DropdownMenuSeparator />

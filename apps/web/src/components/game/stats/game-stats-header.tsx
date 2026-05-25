@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import Link from "next/link";
+import { GameLink } from "~/components/link";
 import { Clock, Gamepad2, Share2, Trophy } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
@@ -56,15 +56,15 @@ function GameStatsHeaderContent({ gameInput }: GameStatsHeaderProps) {
                 )}
               </div>
               {gameInput.type === "original" && (
-                <Link
-                  href={`/games/${gameInput.id}/share`}
+                <GameLink
+                  game={{ gameId: gameInput.id, segment: "share" }}
                   className={buttonVariants({
                     className: "gap-2",
                   })}
                 >
                   <Share2 className="h-4 w-4" />
                   Share
-                </Link>
+                </GameLink>
               )}
             </div>
           </div>

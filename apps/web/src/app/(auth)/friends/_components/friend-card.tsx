@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MoreVertical } from "lucide-react";
 
@@ -73,7 +73,6 @@ export function FriendCard({ friend }: FriendCardProps) {
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <Link
-            prefetch={true}
             href={`/friends/${friend.id}`}
             className="flex items-center gap-4"
           >

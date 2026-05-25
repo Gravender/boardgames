@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { Link, LinkButton } from "~/components/link";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { Calendar, Clock, Gamepad2, Info, Users } from "lucide-react";
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
-import { buttonVariants } from "@board-games/ui/components/button-variants";
 import {
   Card,
   CardContent,
@@ -398,16 +397,14 @@ export function RecentMatches({
                               })}
                           </div>
                           {href ? (
-                            <Link
+                            <LinkButton
                               href={href}
                               aria-label={ariaLabel}
-                              className={buttonVariants({
-                                variant: "ghost",
-                                size: "sm",
-                              })}
+                              variant="ghost"
+                              size="sm"
                             >
                               Open match
-                            </Link>
+                            </LinkButton>
                           ) : null}
                         </div>
                       </div>

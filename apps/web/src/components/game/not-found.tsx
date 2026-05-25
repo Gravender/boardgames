@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { Gamepad2, Home, Search } from "lucide-react";
 
-import { buttonVariants } from "@board-games/ui/components/button-variants";
+import { LinkButton } from "~/components/link";
 
 interface GameNotFoundProps {
   title?: string;
@@ -36,21 +35,15 @@ export function GameNotFound({
 
         {/* Action Buttons */}
         <div className="flex flex-col items-center justify-center gap-4 pt-8 sm:flex-row">
-          <Link
-            href="/dashboard"
-            className={buttonVariants({ variant: "default", size: "lg" })}
-          >
+          <LinkButton href="/dashboard" variant="default" size="lg">
             <Home className="mr-2 h-5 w-5" />
             Return Home
-          </Link>
+          </LinkButton>
 
-          <Link
-            href="/games"
-            className={buttonVariants({ variant: "outline", size: "lg" })}
-          >
+          <LinkButton href="/games" variant="outline" size="lg">
             <Search className="mr-2 h-5 w-5" />
             Browse Games
-          </Link>
+          </LinkButton>
         </div>
 
         {/* Additional Help Text */}
