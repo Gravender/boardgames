@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "~/components/link";
+import { Link, getMatchHref } from "~/components/link";
 import { redirect } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -239,59 +239,75 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
           <div className="flex">
             <ScrollArea className="w-1 flex-1">
               <div className="flex gap-2 p-1 sm:p-4">
-                {friend.linkedPlayer.matches.map((match) => (
-                  <Link
-                    key={`${match.id}-${match.type}`}
-                    href={`/games${match.type === "Shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
-                    className="hover:bg-muted/50 block h-40 w-64 rounded-lg border p-4 transition-colors"
-                  >
-                    <h3 className="truncate font-medium">{match.name}</h3>
+                {friend.linkedPlayer.matches.map((match) => {
+                  const segment = match.finished ? "summary" : undefined;
+                  const matchHref =
+                    match.type === "Shared"
+                      ? getMatchHref({
+                          sharedGameId: match.gameId,
+                          sharedMatchId: match.id,
+                          segment,
+                        })
+                      : getMatchHref({
+                          gameId: match.gameId,
+                          matchId: match.id,
+                          segment,
+                        });
 
-                    <FormattedDate
-                      className="text-muted-foreground mt-2 flex items-center gap-2 text-sm"
-                      date={match.date}
-                      Icon={Calendar}
-                    />
+                  return (
+                    <Link
+                      key={`${match.id}-${match.type}`}
+                      href={matchHref}
+                      className="hover:bg-muted/50 block h-40 w-64 rounded-lg border p-4 transition-colors"
+                    >
+                      <h3 className="truncate font-medium">{match.name}</h3>
 
-                    <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
-                      <Users className="h-4 w-4" />
-                      <span>{match.players.length} players</span>
-                    </div>
+                      <FormattedDate
+                        className="text-muted-foreground mt-2 flex items-center gap-2 text-sm"
+                        date={match.date}
+                        Icon={Calendar}
+                      />
 
-                    <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
-                      <MapPinIcon className="h-4 w-4" />
-                      <span>{match.locationName ?? "N/A"}</span>
-                    </div>
+                      <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
+                        <Users className="h-4 w-4" />
+                        <span>{match.players.length} players</span>
+                      </div>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {match.type === "Original" && (
-                        <Badge variant="outline" className="text-xs">
-                          Original
-                        </Badge>
-                      )}
-                      {match.type === "Shared" && (
-                        <Badge
-                          variant="outline"
-                          className="bg-blue-600 text-xs text-white"
-                        >
-                          Shared
-                        </Badge>
-                      )}
-                      {match.finished ? (
-                        <Badge variant="secondary" className="text-xs">
-                          Completed
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="bg-yellow-600 text-xs text-white"
-                        >
-                          In Progress
-                        </Badge>
-                      )}
-                    </div>
-                  </Link>
-                ))}
+                      <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
+                        <MapPinIcon className="h-4 w-4" />
+                        <span>{match.locationName ?? "N/A"}</span>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {match.type === "Original" && (
+                          <Badge variant="outline" className="text-xs">
+                            Original
+                          </Badge>
+                        )}
+                        {match.type === "Shared" && (
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-600 text-xs text-white"
+                          >
+                            Shared
+                          </Badge>
+                        )}
+                        {match.finished ? (
+                          <Badge variant="secondary" className="text-xs">
+                            Completed
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="bg-yellow-600 text-xs text-white"
+                          >
+                            In Progress
+                          </Badge>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
               <ScrollBar orientation="horizontal" />
             </ScrollArea>

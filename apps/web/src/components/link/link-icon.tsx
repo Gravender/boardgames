@@ -4,7 +4,9 @@ import { buttonVariants } from "@board-games/ui/components/button-variants";
 
 import { LinkButton, type LinkButtonProps } from "./link-button";
 
-type LinkIconProps = LinkButtonProps;
+type LinkIconProps = Omit<LinkButtonProps, "aria-label"> & {
+  "aria-label": string;
+};
 
 /**
  * Icon-only navigation link. Provide `aria-label` (or visible text) for accessibility.

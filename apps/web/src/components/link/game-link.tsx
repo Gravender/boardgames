@@ -55,16 +55,28 @@ function GameLinkFromEntity({
   segment,
   ...props
 }: GameLinkFromEntityProps) {
-  const game: GameLinkGame =
-    type === "shared"
-      ? {
-          sharedGameId: sharedGameId ?? gameId,
-          segment:
-            segment === "share"
-              ? undefined
-              : (segment as "stats" | "edit" | "roles" | undefined),
-        }
-      : { gameId, segment };
+  if (type === "shared") {
+    if (sharedGameId == null) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error(
+          "GameLinkFromEntity requires sharedGameId for shared games.",
+        );
+      }
+      return null;
+    }
+
+    const game: GameLinkGame = {
+      sharedGameId,
+      segment:
+        segment === "share"
+          ? undefined
+          : (segment as "stats" | "edit" | "roles" | undefined),
+    };
+
+    return <GameLink game={game} {...props} />;
+  }
+
+  const game: GameLinkGame = { gameId, segment };
 
   return <GameLink game={game} {...props} />;
 }

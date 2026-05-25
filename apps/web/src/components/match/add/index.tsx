@@ -139,10 +139,15 @@ function AddMatchContent({
         },
         {
           onSuccess: (response) => {
+            const targetGameId = response.sharedGame?.id ?? response.game?.id;
+            if (!targetGameId) {
+              setShowAddMatchDialog(false);
+              return;
+            }
             router.push(
               getMatchHref({
                 matchId: response.id,
-                gameId: response.game.id,
+                gameId: targetGameId,
               }),
             );
             setShowAddMatchDialog(false);
