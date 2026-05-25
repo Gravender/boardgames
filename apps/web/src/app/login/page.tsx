@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { ChevronLeft } from "lucide-react";
 
 import { Button } from "@board-games/ui/button";

@@ -42,7 +42,7 @@ import { useGameRoles } from "~/hooks/queries/game/roles";
 import { useSuspenseLocations } from "~/hooks/queries/locations";
 import { useMatch, usePlayersAndTeams } from "~/hooks/queries/match/match";
 import { useSuspensePlayers } from "~/hooks/queries/match/players";
-import { formatMatchLink } from "~/utils/linkFormatting";
+import { getMatchHref } from "~/components/link";
 import { AddPlayerForm } from "../add/add-player-form";
 import { CustomPlayerSelect } from "../add/player-selector";
 import { editOriginalMatchSchema } from "./schema";
@@ -159,13 +159,12 @@ export function EditOriginalMatchForm(input: {
           onSuccess: (result) => {
             if (result.type === "original") {
               if (result.updatedScore) {
-                const url = formatMatchLink({
-                  matchId: result.matchId,
-                  gameId: result.game.id,
-                  type: "original",
-                  finished: false,
-                });
-                router.push(url);
+                router.push(
+                  getMatchHref({
+                    matchId: result.matchId,
+                    gameId: result.game.id,
+                  }),
+                );
               } else {
                 router.back();
               }

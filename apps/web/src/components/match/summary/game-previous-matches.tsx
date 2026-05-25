@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { MatchLink } from "~/components/link";
 import { compareDesc, format } from "date-fns";
 import { CalendarIcon, MapPinIcon, Users } from "lucide-react";
 
@@ -11,7 +11,6 @@ import { Skeleton } from "@board-games/ui/skeleton";
 
 import type { GameInput } from "../types/input";
 import { useGameMatches } from "~/hooks/queries/game/matches";
-import { formatMatchLink } from "~/utils/linkFormatting";
 
 export function GamePreviousMatches(input: { game: GameInput }) {
   const { gameMatches } = useGameMatches(input.game);
@@ -31,27 +30,23 @@ export function GamePreviousMatches(input: { game: GameInput }) {
               {gameMatches
                 .toSorted((a, b) => compareDesc(a.date, b.date))
                 .map((match) => (
-                  <Link
+                  <MatchLink
                     key={`${match.id}-${match.type}`}
-                    prefetch={true}
                     data-testid="previous-match-card"
                     aria-label={`Match: ${match.name}, ${match.matchPlayers.length} players, ${match.finished ? "Completed" : "In Progress"}`}
-                    href={formatMatchLink(
+                    match={
                       match.type === "original"
                         ? {
-                            matchId: match.id,
                             gameId: match.game.id,
-                            type: "original",
-                            finished: match.finished,
+                            matchId: match.id,
+                            segment: match.finished ? "summary" : undefined,
                           }
                         : {
                             sharedMatchId: match.sharedMatchId,
-                            sharedGameId: match.game.id,
-                            type: match.game.type,
-                            linkedGameId: match.game.linkedGameId,
-                            finished: match.finished,
-                          },
-                    )}
+                            sharedGameId: match.game.sharedGameId,
+                            segment: match.finished ? "summary" : undefined,
+                          }
+                    }
                     className="hover:bg-muted/50 block h-40 w-64 rounded-lg border p-4 transition-colors"
                   >
                     <h3 className="truncate font-medium">{match.name}</h3>
@@ -99,7 +94,7 @@ export function GamePreviousMatches(input: { game: GameInput }) {
                         </Badge>
                       )}
                     </div>
-                  </Link>
+                  </MatchLink>
                 ))}
             </div>
             <ScrollBar orientation="horizontal" />

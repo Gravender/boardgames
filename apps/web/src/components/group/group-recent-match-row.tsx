@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import type React from "react";
 import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
@@ -15,27 +15,10 @@ import { Calendar, Clock, MapPin, Users } from "lucide-react";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
-import { formatMatchLink } from "~/utils/linkFormatting";
+import { MatchLink } from "~/components/link";
 
 export type GroupMatchRow =
   RouterOutputs["group"]["getGroup"]["matches"][number];
-
-const getMatchHref = (match: GroupMatchRow) => {
-  if (match.type === "original") {
-    return formatMatchLink({
-      type: "original",
-      gameId: match.game.id,
-      matchId: match.id,
-      finished: match.finished,
-    });
-  }
-  return formatMatchLink({
-    type: match.game.type === "linked" ? "linked" : "shared",
-    sharedMatchId: match.sharedMatchId,
-    sharedGameId: match.game.sharedGameId,
-    finished: match.finished,
-  });
-};
 
 const getMatchTitle = (match: GroupMatchRow) =>
   match.name?.trim() || match.game.name;
@@ -46,8 +29,24 @@ const MetaSep = () => (
   </span>
 );
 
+const getMatchLinkMatch = (
+  match: GroupMatchRow,
+): React.ComponentProps<typeof MatchLink>["match"] => {
+  if (match.type === "original") {
+    return {
+      gameId: match.game.id,
+      matchId: match.id,
+      segment: match.finished ? "summary" : undefined,
+    };
+  }
+  return {
+    sharedMatchId: match.sharedMatchId,
+    sharedGameId: match.game.sharedGameId,
+    segment: match.finished ? "summary" : undefined,
+  };
+};
+
 export const GroupRecentMatchRow = ({ match }: { match: GroupMatchRow }) => {
-  const href = getMatchHref(match);
   const title = getMatchTitle(match);
   const isCoop = match.isCoop;
 
@@ -57,9 +56,8 @@ export const GroupRecentMatchRow = ({ match }: { match: GroupMatchRow }) => {
 
   return (
     <Item variant="outline" role="listitem" className="p-0">
-      <Link
-        prefetch={true}
-        href={href}
+      <MatchLink
+        match={getMatchLinkMatch(match)}
         className="hover:bg-muted/40 flex w-full items-center gap-2 rounded-md p-2 text-left transition-colors"
       >
         <ItemMedia
@@ -123,7 +121,7 @@ export const GroupRecentMatchRow = ({ match }: { match: GroupMatchRow }) => {
             </p>
           ) : null}
         </ItemContent>
-      </Link>
+      </MatchLink>
     </Item>
   );
 };

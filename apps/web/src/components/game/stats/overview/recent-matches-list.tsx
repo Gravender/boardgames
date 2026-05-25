@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "~/components/link";
 import {
   Award,
   Calendar,
@@ -40,7 +40,7 @@ import type { GameInput } from "~/components/match/types/input";
 import { FormattedDate } from "~/components/formatted-date";
 import { PlayerImage } from "~/components/player-image";
 import { useGameMatches } from "~/hooks/queries/game/matches";
-import { formatMatchLink } from "~/utils/linkFormatting";
+import { getMatchHref } from "~/components/link";
 
 type Matches = NonNullable<RouterOutputs["game"]["gameMatches"]>;
 type Match = Matches[number];
@@ -91,19 +91,17 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
               const userMatchPlayer = match.matchPlayers.find((p) => p.isUser);
               const isCoop = match.isCoop;
               const isManualWinCondition = match.winCondition === "Manual";
-              const matchHref = formatMatchLink(
+              const matchHref = getMatchHref(
                 match.type === "original"
                   ? {
-                      type: "original",
                       gameId: match.game.id,
                       matchId: match.id,
-                      finished: match.finished,
+                      segment: match.finished ? "summary" : undefined,
                     }
                   : {
-                      type: "shared",
                       sharedGameId: match.game.sharedGameId,
                       sharedMatchId: match.sharedMatchId,
-                      finished: match.finished,
+                      segment: match.finished ? "summary" : undefined,
                     },
               );
 

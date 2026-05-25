@@ -22,7 +22,7 @@ import { useGameRoles } from "~/hooks/queries/game/roles";
 import { useScoresheets } from "~/hooks/queries/game/scoresheets";
 import { useLocations } from "~/hooks/queries/locations";
 import { useSuspensePlayers } from "~/hooks/queries/match/players";
-import { formatMatchLink } from "~/utils/linkFormatting";
+import { getMatchHref } from "~/components/link";
 import { AddPlayerForm } from "./add-player-form";
 import { MatchForm } from "./match";
 import { CustomPlayerSelect } from "./player-selector";
@@ -139,13 +139,12 @@ function AddMatchContent({
         },
         {
           onSuccess: (response) => {
-            const url = formatMatchLink({
-              matchId: response.id,
-              gameId: response.game.id,
-              type: "original",
-              finished: false,
-            });
-            router.push(url);
+            router.push(
+              getMatchHref({
+                matchId: response.id,
+                gameId: response.game.id,
+              }),
+            );
             setShowAddMatchDialog(false);
           },
         },

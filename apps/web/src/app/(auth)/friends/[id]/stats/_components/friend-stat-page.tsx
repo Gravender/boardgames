@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { redirect } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -242,7 +242,7 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
                 {friend.linkedPlayer.matches.map((match) => (
                   <Link
                     key={`${match.id}-${match.type}`}
-                    prefetch={true}
+                   
                     href={`/games${match.type === "Shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
                     className="hover:bg-muted/50 block h-40 w-64 rounded-lg border p-4 transition-colors"
                   >

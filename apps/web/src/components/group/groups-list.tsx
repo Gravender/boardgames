@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { LinkDiv } from "~/components/link";
 import { Search, Sparkles, Users } from "lucide-react";
 
 import { Badge } from "@board-games/ui/badge";
@@ -91,10 +91,10 @@ export const GroupsList = () => {
                 role="listitem"
                 className="hover:bg-muted/50 transition-colors"
               >
-                <Link
-                  prefetch={true}
+                <LinkDiv
+                  layout="row"
                   href={`/groups/${group.id}`}
-                  className="flex min-w-0 flex-1 items-center gap-3 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+                  className="gap-3 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ItemMedia variant="icon" className="max-w-22 justify-start">
                     <GroupPlayerAvatarStack players={group.players} size="sm" />
@@ -108,7 +108,7 @@ export const GroupsList = () => {
                       {group.players.length === 1 ? "" : "s"}
                     </ItemDescription>
                   </ItemContent>
-                </Link>
+                </LinkDiv>
                 <ItemActions>
                   <span
                     className={cn(

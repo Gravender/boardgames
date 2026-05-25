@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { MatchLink } from "~/components/link";
 import { format } from "date-fns";
 import {
   Clock,
@@ -25,7 +25,6 @@ import {
   ItemTitle,
 } from "@board-games/ui/item";
 
-import { formatMatchLink } from "~/utils/linkFormatting";
 import { MatchDropdown } from "./match-dropdown";
 
 type Match = NonNullable<RouterOutputs["game"]["gameMatches"]>[number];
@@ -36,28 +35,9 @@ interface MatchItemProps {
 export function MatchItem({ match }: MatchItemProps) {
   const isShared = match.type === "shared";
 
-  return (
-    <Item variant="outline" className="hover:bg-muted/50 transition-colors">
-      <Link
-        prefetch={true}
-        href={formatMatchLink(
-          match.type === "original"
-            ? {
-                type: "original",
-                gameId: match.game.id,
-                matchId: match.id,
-                finished: match.finished,
-              }
-            : {
-                type: "shared",
-                sharedGameId: match.game.sharedGameId,
-                sharedMatchId: match.id,
-                finished: match.finished,
-              },
-        )}
-        className="flex min-w-0 flex-1 items-center gap-4"
-      >
-        <div className="flex items-center gap-4">
+  const matchLinkContent = (
+    <>
+      <div className="flex items-center gap-4">
           {!match.finished ? (
             <PlayCircle className="size-6 text-blue-500" />
           ) : match.hasUser ? (
@@ -123,7 +103,34 @@ export function MatchItem({ match }: MatchItemProps) {
             </span>
           </ItemDescription>
         </ItemContent>
-      </Link>
+    </>
+  );
+
+  return (
+    <Item variant="outline" className="hover:bg-muted/50 transition-colors">
+      {match.type === "original" ? (
+        <MatchLink
+          layout="row"
+          match={{
+            gameId: match.game.id,
+            matchId: match.id,
+            segment: match.finished ? "summary" : undefined,
+          }}
+        >
+          {matchLinkContent}
+        </MatchLink>
+      ) : (
+        <MatchLink
+          layout="row"
+          match={{
+            sharedGameId: match.game.sharedGameId,
+            sharedMatchId: match.id,
+            segment: match.finished ? "summary" : undefined,
+          }}
+        >
+          {matchLinkContent}
+        </MatchLink>
+      )}
 
       <ItemActions className="flex items-center gap-2 pl-2 sm:pl-4">
         {isShared && (

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { GamepadIcon } from "lucide-react";
 
@@ -12,6 +11,7 @@ import {
   ItemTitle,
 } from "@board-games/ui/item";
 
+import { LinkDiv } from "~/components/link";
 import { PlayerImage } from "~/components/player-image";
 import { PlayerDropDown } from "~/components/player/player-dropdown";
 
@@ -38,11 +38,7 @@ export const PlayerItem = ({ player }: PlayerItemProps) => {
       aria-label={`${player.name} player`}
       className="hover:bg-muted/50 transition-colors"
     >
-      <Link
-        prefetch={true}
-        href={getPlayerPath(player)}
-        className="flex min-w-0 flex-1 items-center gap-4"
-      >
+      <LinkDiv layout="row" href={getPlayerPath(player)}>
         <PlayerImage
           image={player.image}
           alt={player.name}
@@ -84,7 +80,7 @@ export const PlayerItem = ({ player }: PlayerItemProps) => {
             <span className="mt-0.5 block">{lastPlayedLabel}</span>
           </ItemDescription>
         </ItemContent>
-      </Link>
+      </LinkDiv>
 
       <ItemActions>
         <PlayerDropDown data={player} />

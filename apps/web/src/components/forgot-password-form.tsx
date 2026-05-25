@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { Loader2 } from "lucide-react";
 import { z } from "zod/v4";
 

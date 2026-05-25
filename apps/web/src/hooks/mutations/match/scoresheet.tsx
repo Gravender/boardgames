@@ -7,7 +7,7 @@ import { usePostHog } from "posthog-js/react";
 
 import { toast } from "@board-games/ui/toast";
 
-import { formatMatchLink } from "~/utils/linkFormatting";
+import { getMatchHref } from "~/components/link";
 import { invalidatePlayerStatsQueries } from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
 
@@ -233,21 +233,17 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
           finishedType: "manual",
         });
         router.push(
-          formatMatchLink(
-            data.type === "shared"
-              ? {
-                  sharedMatchId: data.match.sharedMatchId,
-                  sharedGameId: data.game.sharedGameId,
-                  type: data.game.type as "shared" | "linked",
-                  finished: true,
-                }
-              : {
-                  matchId: data.match.id,
-                  gameId: data.game.id,
-                  type: data.game.type,
-                  finished: true,
-                },
-          ),
+          data.type === "shared"
+            ? getMatchHref({
+                sharedMatchId: data.match.sharedMatchId,
+                sharedGameId: data.game.sharedGameId,
+                segment: "summary",
+              })
+            : getMatchHref({
+                matchId: data.match.id,
+                gameId: data.game.id,
+                segment: "summary",
+              }),
         );
         // Trigger broader cache invalidations after navigation.
         void Promise.all([
@@ -296,21 +292,17 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
           finishedType: "tie-breaker",
         });
         router.push(
-          formatMatchLink(
-            data.type === "shared"
-              ? {
-                  sharedMatchId: data.match.sharedMatchId,
-                  sharedGameId: data.game.sharedGameId,
-                  type: data.game.type as "shared" | "linked",
-                  finished: true,
-                }
-              : {
-                  matchId: data.match.id,
-                  gameId: data.game.id,
-                  type: data.game.type,
-                  finished: true,
-                },
-          ),
+          data.type === "shared"
+            ? getMatchHref({
+                sharedMatchId: data.match.sharedMatchId,
+                sharedGameId: data.game.sharedGameId,
+                segment: "summary",
+              })
+            : getMatchHref({
+                matchId: data.match.id,
+                gameId: data.game.id,
+                segment: "summary",
+              }),
         );
         void invalidatePlayerStatsQueries(queryClient, trpc);
       },

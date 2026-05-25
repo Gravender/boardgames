@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "~/components/link";
+import { getGameHref } from "~/components/link";
 import { useMemo } from "react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -43,10 +44,13 @@ const gameStatsHref = (
   game: Data["games"][number],
 ): { href: string; label: string } => {
   if (game.type === "original") {
-    return { href: `/games/${game.id}/stats`, label: game.name };
+    return {
+      href: getGameHref({ gameId: game.id, segment: "stats" }),
+      label: game.name,
+    };
   }
   return {
-    href: `/games/shared/${game.sharedGameId}/stats`,
+    href: getGameHref({ sharedGameId: game.sharedGameId, segment: "stats" }),
     label: game.name,
   };
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { Link } from "~/components/link";
 import { ChevronDown, Settings, UserRound } from "lucide-react";
 
 import {
@@ -47,7 +47,7 @@ export function NavSecondary({
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton
                     render={
-                      <Link prefetch={true} href="/friends">
+                      <Link href="/friends">
                         Friends
                       </Link>
                     }
@@ -56,7 +56,7 @@ export function NavSecondary({
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton
                     render={
-                      <Link prefetch={true} href="/share-requests">
+                      <Link href="/share-requests">
                         Share Requests
                       </Link>
                     }
@@ -88,7 +88,7 @@ export function NavSecondary({
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton
                     render={
-                      <Link prefetch={true} href="/settings/profile">
+                      <Link href="/settings/profile">
                         Profile
                       </Link>
                     }
