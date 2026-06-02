@@ -17,9 +17,10 @@ import { useAppForm } from "~/hooks/form";
 import { useAddGameMutation } from "~/hooks/mutations/game/add";
 import { useUploadThing } from "~/utils/uploadthing";
 import { addGameFormSchema, defaultValues } from "./add-game.types";
-import { GameDetailsForm } from "./game-details-form";
 import { RolesForm } from "./roles-form";
-import { ScoresheetForm } from "./scoresheet-form";
+import { ScoresheetsForm } from "./scoresheets-form";
+import { GameDetailsSection } from "../form/game-details-section";
+import { ScoresheetStep } from "../form/scoresheet-step";
 
 export function AddGameForm({
   setIsOpen,
@@ -29,6 +30,7 @@ export function AddGameForm({
   const [imagePreview, setImagePreview] = useState<ImagePreviewType | null>(
     null,
   );
+  const [isMoreOptionsOpen, setIsMoreOptionsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const { createGameMutation } = useAddGameMutation();
   const { startUpload } = useUploadThing("imageUploader");
@@ -75,6 +77,7 @@ export function AddGameForm({
           {
             onSuccess: () => {
               setImagePreview(null);
+              setIsMoreOptionsOpen(false);
               form.reset();
               setIsUploading(false);
               setIsOpen(false);
@@ -128,6 +131,7 @@ export function AddGameForm({
             {
               onSuccess: () => {
                 setImagePreview(null);
+                setIsMoreOptionsOpen(false);
                 form.reset();
                 setIsUploading(false);
                 setIsOpen(false);
@@ -179,7 +183,8 @@ export function AddGameForm({
                 </DialogTitle>
               </DialogHeader>
               {activeForm === "scoresheet" && (
-                <ScoresheetForm
+                <ScoresheetStep
+                  mode="add"
                   form={form}
                   onSave={() => {
                     form.setFieldValue("activeForm", "game");
@@ -193,15 +198,21 @@ export function AddGameForm({
               )}
               {activeForm === "game" && (
                 <>
-                  <GameDetailsForm
+                  <GameDetailsSection
                     form={form}
+                    variant="add"
                     imagePreview={imagePreview}
                     setImagePreview={setImagePreview}
-                    setIsScoresheet={() =>
-                      form.setFieldValue("activeForm", "scoresheet")
-                    }
-                    setActiveScoreSheet={(index) =>
-                      form.setFieldValue("activeScoreSheetIndex", index)
+                    advancedOpen={isMoreOptionsOpen}
+                    onAdvancedOpenChange={setIsMoreOptionsOpen}
+                    onEditRoles={() => form.setFieldValue("activeForm", "roles")}
+                    scoresheets={
+                      <ScoresheetsForm
+                        form={form}
+                        onOpenScoresheet={() =>
+                          form.setFieldValue("activeForm", "scoresheet")
+                        }
+                      />
                     }
                   />
                   <DialogFooter className="gap-2">

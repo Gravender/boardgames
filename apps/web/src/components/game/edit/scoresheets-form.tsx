@@ -91,9 +91,10 @@ export const ScoresheetsForm = withForm({
                                     const canDelete = isOriginal
                                       ? canDeleteOriginal
                                       : true;
+                                    const scoresheetKey = `${scoresheet.scoresheetType}-${scoresheet.scoresheet.id ?? index}`;
 
                                     return (
-                                      <div key={scoresheet.scoresheet.id}>
+                                      <div key={scoresheetKey}>
                                         <form.AppField
                                           name={`scoresheets[${index}]`}
                                         >
