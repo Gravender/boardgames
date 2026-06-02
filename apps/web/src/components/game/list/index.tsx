@@ -111,7 +111,10 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
     if (filters.maxPlayers !== defaultFilters.maxPlayers && isManuallyFiltered)
       count++;
     if (filters.minPlaytime !== defaultFilters.minPlaytime) count++;
-    if (filters.maxPlaytime !== defaultFilters.maxPlaytime && isManuallyFiltered)
+    if (
+      filters.maxPlaytime !== defaultFilters.maxPlaytime &&
+      isManuallyFiltered
+    )
       count++;
     return count;
   }, [filters, games, isManuallyFiltered]);
@@ -190,7 +193,10 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
         }
         case "lastPlayed-asc": {
           if (a.lastPlayed.date && b.lastPlayed.date) {
-            const dateCompare = compareAsc(a.lastPlayed.date, b.lastPlayed.date);
+            const dateCompare = compareAsc(
+              a.lastPlayed.date,
+              b.lastPlayed.date,
+            );
             if (dateCompare !== 0) return dateCompare;
             return compareAsc(a.createdAt, b.createdAt);
           }
@@ -200,7 +206,10 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
         }
         case "lastPlayed-desc": {
           if (a.lastPlayed.date && b.lastPlayed.date) {
-            const dateCompare = compareAsc(b.lastPlayed.date, a.lastPlayed.date);
+            const dateCompare = compareAsc(
+              b.lastPlayed.date,
+              a.lastPlayed.date,
+            );
             if (dateCompare !== 0) return dateCompare;
             return compareAsc(b.createdAt, a.createdAt);
           }
@@ -311,7 +320,8 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                     variant="outline"
                     className={cn(
                       "shrink-0 bg-transparent",
-                      activeFilterCount > 0 && "bg-primary/10 border-primary/30",
+                      activeFilterCount > 0 &&
+                        "bg-primary/10 border-primary/30",
                     )}
                   >
                     <Filter className="mr-2 h-4 w-4" />
@@ -407,6 +417,7 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                 <button
                   onClick={() => setSearch("")}
                   className="hover:bg-muted rounded-full p-0.5"
+                  aria-label="Remove search filter"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -421,6 +432,7 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                 <button
                   onClick={() => setFilters({ ...filters, showOriginal: true })}
                   className="hover:bg-muted rounded-full p-0.5"
+                  aria-label="Remove original type filter"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -435,6 +447,7 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                 <button
                   onClick={() => setFilters({ ...filters, showShared: true })}
                   className="hover:bg-muted rounded-full p-0.5"
+                  aria-label="Remove shared type filter"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -461,6 +474,7 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                     })
                   }
                   className="hover:bg-muted rounded-full p-0.5"
+                  aria-label="Remove player count filter"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -488,6 +502,7 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                     })
                   }
                   className="hover:bg-muted rounded-full p-0.5"
+                  aria-label="Remove playtime filter"
                 >
                   <X className="h-3 w-3" />
                 </button>
