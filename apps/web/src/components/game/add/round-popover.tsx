@@ -46,6 +46,8 @@ export const RoundPopOver = ({
             variant="outline"
             size="icon"
             disabled={disabled}
+            aria-label="Open round settings"
+            aria-haspopup="dialog"
           >
             <Settings />
           </Button>

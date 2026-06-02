@@ -82,6 +82,9 @@ export function AddGameForm({
               setIsUploading(false);
               setIsOpen(false);
             },
+            onError: () => {
+              setIsUploading(false);
+            },
           },
         );
       } else {

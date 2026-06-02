@@ -155,6 +155,22 @@ const ScoresheetFieldsGroup = withFieldGroup({
     onBack,
   }) {
     const posthog = usePostHog();
+
+    const createTempId = () => {
+      if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+        return crypto.randomUUID();
+      }
+      return `tmp_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    };
+
+    const getNextRoundOrder = (rounds: any[]) => {
+      const maxOrder = rounds.reduce<number>((max, round) => {
+        const order = typeof round?.order === "number" ? round.order : null;
+        return order === null ? max : Math.max(max, order);
+      }, 0);
+      return maxOrder + 1;
+    };
+
     return (
       <group.Subscribe
         selector={(state) => ({
@@ -566,9 +582,17 @@ const ScoresheetFieldsGroup = withFieldGroup({
                             {rounds.map((round, index) => {
                               const keySeed =
                                 mode === "edit"
-                                  ? (round.roundId ?? round.order ?? round.name)
-                                  : (round.order ?? round.name);
+                                  ? (round.roundId ??
+                                    round._tempId ??
+                                    round.name ??
+                                    round.order)
+                                  : (round._tempId ??
+                                    round.name ??
+                                    round.order);
                               const roundKey = `round-${keySeed ? keySeed : `index-${index}`}`;
+                              const roundLabel = round?.name
+                                ? String(round.name)
+                                : `#${index + 1}`;
 
                               return (
                                 <div
@@ -628,15 +652,19 @@ const ScoresheetFieldsGroup = withFieldGroup({
                                       variant="secondary"
                                       size="icon"
                                       type="button"
+                                      aria-label={`Duplicate round ${roundLabel}`}
                                       onClick={() => {
                                         const current = rounds[index];
                                         if (!current) {
                                           return;
                                         }
+                                        const nextOrder =
+                                          getNextRoundOrder(rounds);
                                         const newRound = {
                                           ...current,
-                                          name: `Round ${rounds.length + 1}`,
-                                          order: rounds.length + 1,
+                                          _tempId: createTempId(),
+                                          name: `Round ${nextOrder}`,
+                                          order: nextOrder,
                                           ...(mode === "edit"
                                             ? { roundId: null }
                                             : {}),
@@ -651,6 +679,7 @@ const ScoresheetFieldsGroup = withFieldGroup({
                                       variant="destructive"
                                       size="icon"
                                       type="button"
+                                      aria-label={`Delete round ${roundLabel}`}
                                       onClick={() =>
                                         roundsField.removeValue(index)
                                       }
@@ -669,13 +698,16 @@ const ScoresheetFieldsGroup = withFieldGroup({
                               type="button"
                               variant="secondary"
                               size={"icon"}
-                              onClick={() =>
+                              aria-label="Add round"
+                              onClick={() => {
+                                const nextOrder = getNextRoundOrder(rounds);
                                 roundsField.pushValue({
                                   ...defaultNewRound,
-                                  name: `Round ${rounds.length + 1}`,
-                                  order: rounds.length + 1,
-                                })
-                              }
+                                  _tempId: createTempId(),
+                                  name: `Round ${nextOrder}`,
+                                  order: nextOrder,
+                                });
+                              }}
                               disabled={!roundsEditable}
                             >
                               <Plus />
@@ -685,6 +717,7 @@ const ScoresheetFieldsGroup = withFieldGroup({
                               type="button"
                               variant="secondary"
                               size={"icon"}
+                              aria-label="Remove last round"
                               onClick={() => {
                                 if (rounds.length > 0) {
                                   roundsField.removeValue(rounds.length - 1);
