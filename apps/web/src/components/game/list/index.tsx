@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { compareAsc } from "date-fns";
 import { ArrowUpDown, Filter, SearchIcon, X } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
+import { cn } from "@board-games/ui/utils";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -66,36 +67,57 @@ interface Filters {
 
 const getDefaultFilters = (
   games: RouterOutputs["game"]["getGames"],
-): Filters => ({
-  showOriginal: true,
-  showShared: true,
-  minPlayers: 0,
-  maxPlayers: games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 0),
-  minPlaytime: 0,
-  maxPlaytime: games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 0),
-});
+): Filters => {
+  const maxPlayers = games.reduce(
+    (a, b) => Math.max(a, b.players.max ?? b.players.min ?? 0),
+    0,
+  );
+  const maxPlaytime = games.reduce(
+    (a, b) => Math.max(a, b.playtime.max ?? b.playtime.min ?? 0),
+    0,
+  );
+
+  return {
+    showOriginal: true,
+    showShared: true,
+    minPlayers: 0,
+    maxPlayers: Math.max(maxPlayers, 10), // Default to at least 10
+    minPlaytime: 0,
+    maxPlaytime: Math.max(maxPlaytime, 120), // Default to at least 120
+  };
+};
 
 function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("lastPlayed-desc");
-  const [filters, setFilters] = useState<Filters>(getDefaultFilters(games));
+  const [filters, setFilters] = useState<Filters>(() =>
+    getDefaultFilters(games),
+  );
+  const [isManuallyFiltered, setIsManuallyFiltered] = useState(false);
+
+  // Sync filters when games list changes, but only if not manually filtered
+  useEffect(() => {
+    if (!isManuallyFiltered && games.length > 0) {
+      setFilters(getDefaultFilters(games));
+    }
+  }, [games, isManuallyFiltered]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (!filters.showOriginal || !filters.showShared) count++;
+    if (!filters.showOriginal) count++;
+    if (!filters.showShared) count++;
     const defaultFilters = getDefaultFilters(games);
-    if (
-      filters.minPlayers !== defaultFilters.minPlayers ||
-      filters.maxPlayers !== defaultFilters.maxPlayers
-    )
+    if (filters.minPlayers !== defaultFilters.minPlayers) count++;
+    if (filters.maxPlayers !== defaultFilters.maxPlayers && isManuallyFiltered)
       count++;
+    if (filters.minPlaytime !== defaultFilters.minPlaytime) count++;
     if (
-      filters.minPlaytime !== defaultFilters.minPlaytime ||
-      filters.maxPlaytime !== defaultFilters.maxPlaytime
+      filters.maxPlaytime !== defaultFilters.maxPlaytime &&
+      isManuallyFiltered
     )
       count++;
     return count;
-  }, [filters, games]);
+  }, [filters, games, isManuallyFiltered]);
 
   // Apply search, sort, and filters
   const filteredGames = useMemo(() => {
@@ -109,6 +131,8 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
       );
     }
 
+    const defaultFilters = getDefaultFilters(games);
+
     // Apply filters
     result = result.filter((game) => {
       // Type filter
@@ -118,9 +142,15 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
       // Player count filter - check if ranges overlap
       const gameMinPlayers = game.players.min;
       const gameMaxPlayers = game.players.max;
+
+      const filterMaxPlayers =
+        filters.maxPlayers === defaultFilters.maxPlayers && !isManuallyFiltered
+          ? Infinity
+          : filters.maxPlayers;
+
       if (
         (gameMaxPlayers !== null && gameMaxPlayers < filters.minPlayers) ||
-        (gameMinPlayers !== null && gameMinPlayers > filters.maxPlayers)
+        (gameMinPlayers !== null && gameMinPlayers > filterMaxPlayers)
       ) {
         return false;
       }
@@ -128,9 +158,16 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
       // Playtime filter - check if ranges overlap
       const gameMinPlaytime = game.playtime.min;
       const gameMaxPlaytime = game.playtime.max;
+
+      const filterMaxPlaytime =
+        filters.maxPlaytime === defaultFilters.maxPlaytime &&
+        !isManuallyFiltered
+          ? Infinity
+          : filters.maxPlaytime;
+
       if (
         (gameMaxPlaytime !== null && gameMaxPlaytime < filters.minPlaytime) ||
-        (gameMinPlaytime !== null && gameMinPlaytime > filters.maxPlaytime)
+        (gameMinPlaytime !== null && gameMinPlaytime > filterMaxPlaytime)
       ) {
         return false;
       }
@@ -156,7 +193,12 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
         }
         case "lastPlayed-asc": {
           if (a.lastPlayed.date && b.lastPlayed.date) {
-            return compareAsc(a.lastPlayed.date, b.lastPlayed.date);
+            const dateCompare = compareAsc(
+              a.lastPlayed.date,
+              b.lastPlayed.date,
+            );
+            if (dateCompare !== 0) return dateCompare;
+            return compareAsc(a.createdAt, b.createdAt);
           }
           if (!a.lastPlayed.date && b.lastPlayed.date) return 1;
           if (a.lastPlayed.date && !b.lastPlayed.date) return -1;
@@ -164,7 +206,12 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
         }
         case "lastPlayed-desc": {
           if (a.lastPlayed.date && b.lastPlayed.date) {
-            return compareAsc(b.lastPlayed.date, a.lastPlayed.date);
+            const dateCompare = compareAsc(
+              b.lastPlayed.date,
+              a.lastPlayed.date,
+            );
+            if (dateCompare !== 0) return dateCompare;
+            return compareAsc(b.createdAt, a.createdAt);
           }
           if (!a.lastPlayed.date && b.lastPlayed.date) return 1;
           if (a.lastPlayed.date && !b.lastPlayed.date) return -1;
@@ -183,15 +230,14 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
   }, [games, search, sortBy, filters]);
 
   const resetFilters = () => {
+    setIsManuallyFiltered(false);
     setFilters(getDefaultFilters(games));
     setSearch("");
   };
 
-  const maxPlayers = games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 0);
-  const maxPlaytime = games.reduce(
-    (a, b) => Math.max(a, b.playtime.max ?? 0),
-    0,
-  );
+  const currentDefaultFilters = getDefaultFilters(games);
+  const maxPlayers = currentDefaultFilters.maxPlayers;
+  const maxPlaytime = currentDefaultFilters.maxPlaytime;
 
   return (
     <div>
@@ -270,7 +316,14 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <Button variant="outline" className="shrink-0 bg-transparent">
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "shrink-0 bg-transparent",
+                      activeFilterCount > 0 &&
+                        "bg-primary/10 border-primary/30",
+                    )}
+                  >
                     <Filter className="mr-2 h-4 w-4" />
                     Filter
                     {activeFilterCount > 0 && (
@@ -289,17 +342,19 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                   <DropdownMenuLabel>Type</DropdownMenuLabel>
                   <DropdownMenuCheckboxItem
                     checked={filters.showOriginal}
-                    onCheckedChange={(checked) =>
-                      setFilters({ ...filters, showOriginal: checked })
-                    }
+                    onCheckedChange={(checked) => {
+                      setIsManuallyFiltered(true);
+                      setFilters({ ...filters, showOriginal: checked });
+                    }}
                   >
                     Original
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={filters.showShared}
-                    onCheckedChange={(checked) =>
-                      setFilters({ ...filters, showShared: checked })
-                    }
+                    onCheckedChange={(checked) => {
+                      setIsManuallyFiltered(true);
+                      setFilters({ ...filters, showShared: checked });
+                    }}
                   >
                     Shared
                   </DropdownMenuCheckboxItem>
@@ -315,6 +370,7 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                         if (!Array.isArray(values)) {
                           return;
                         }
+                        setIsManuallyFiltered(true);
                         setFilters({
                           ...filters,
                           minPlayers: values[0] ?? 0,
@@ -335,6 +391,7 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                         if (!Array.isArray(values)) {
                           return;
                         }
+                        setIsManuallyFiltered(true);
                         setFilters({
                           ...filters,
                           minPlaytime: values[0] ?? 0,
@@ -350,13 +407,114 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
         </div>
 
         {(search || activeFilterCount > 0) && (
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-muted-foreground text-sm">
-              {filteredGames.length} of {games.length} games
-            </span>
-            <Button variant="ghost" size="sm" onClick={resetFilters}>
-              <X className="mr-1 h-3 w-3" />
-              Clear
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {search && (
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 pr-1"
+              >
+                Search: {search}
+                <button
+                  onClick={() => setSearch("")}
+                  className="hover:bg-muted rounded-full p-0.5"
+                  aria-label="Remove search filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {!filters.showOriginal && (
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 pr-1"
+              >
+                No Original
+                <button
+                  onClick={() => setFilters({ ...filters, showOriginal: true })}
+                  className="hover:bg-muted rounded-full p-0.5"
+                  aria-label="Remove original type filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {!filters.showShared && (
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 pr-1"
+              >
+                No Shared
+                <button
+                  onClick={() => setFilters({ ...filters, showShared: true })}
+                  className="hover:bg-muted rounded-full p-0.5"
+                  aria-label="Remove shared type filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {(filters.minPlayers > 0 ||
+              (isManuallyFiltered &&
+                filters.maxPlayers < currentDefaultFilters.maxPlayers)) && (
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 pr-1"
+              >
+                Players: {filters.minPlayers}-
+                {isManuallyFiltered &&
+                filters.maxPlayers < currentDefaultFilters.maxPlayers
+                  ? filters.maxPlayers
+                  : "Any"}
+                <button
+                  onClick={() =>
+                    setFilters({
+                      ...filters,
+                      minPlayers: 0,
+                      maxPlayers: currentDefaultFilters.maxPlayers,
+                    })
+                  }
+                  className="hover:bg-muted rounded-full p-0.5"
+                  aria-label="Remove player count filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {(filters.minPlaytime > 0 ||
+              (isManuallyFiltered &&
+                filters.maxPlaytime < currentDefaultFilters.maxPlaytime)) && (
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 pr-1"
+              >
+                Playtime: {filters.minPlaytime}-
+                {isManuallyFiltered &&
+                filters.maxPlaytime < currentDefaultFilters.maxPlaytime
+                  ? filters.maxPlaytime
+                  : "Any"}
+                min
+                <button
+                  onClick={() =>
+                    setFilters({
+                      ...filters,
+                      minPlaytime: 0,
+                      maxPlaytime: currentDefaultFilters.maxPlaytime,
+                    })
+                  }
+                  className="hover:bg-muted rounded-full p-0.5"
+                  aria-label="Remove playtime filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+              className="h-7 px-2 text-xs"
+            >
+              Clear all
             </Button>
           </div>
         )}
