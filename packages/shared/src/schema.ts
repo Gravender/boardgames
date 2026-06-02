@@ -68,8 +68,8 @@ const withGameBoundsValidation = <T extends z.ZodTypeAny>(schema: T) =>
     };
 
     if (
-      value.playersMin &&
-      value.playersMax &&
+      value.playersMin !== null &&
+      value.playersMax !== null &&
       value.playersMin > value.playersMax
     ) {
       ctx.issues.push({
@@ -81,13 +81,13 @@ const withGameBoundsValidation = <T extends z.ZodTypeAny>(schema: T) =>
       ctx.issues.push({
         code: "custom",
         input: value,
-        message: "Playtime max must be greater than or equal to playtime min.",
-        path: ["playtimeMax"],
+        message: "Players max must be greater than or equal to players min.",
+        path: ["playersMax"],
       });
     }
     if (
-      value.playtimeMin &&
-      value.playtimeMax &&
+      value.playtimeMin !== null &&
+      value.playtimeMax !== null &&
       value.playtimeMin > value.playtimeMax
     ) {
       ctx.issues.push({

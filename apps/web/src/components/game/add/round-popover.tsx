@@ -18,119 +18,122 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@board-games/ui/select";
+import { toast } from "@board-games/ui/toast";
 
 import type { Round } from "./add-game.types";
 import { NumberInput } from "~/components/number-input";
-import { withFieldGroup } from "~/hooks/form";
 import { defaultRound } from "./add-game.types";
 
-const defaultValues: {
-  round: Round;
-} = {
-  round: defaultRound,
+type RoundPopOverProps = {
+  form: any;
+  roundPath: string;
+  disabled?: boolean;
 };
 
-export const RoundPopOver = withFieldGroup({
-  defaultValues,
-  props: {
-    disabled: false,
-  },
-  render: function Render({ group, disabled }) {
-    const roundTypeOptions = roundTypes;
+export const RoundPopOver = ({
+  form,
+  roundPath,
+  disabled = false,
+}: RoundPopOverProps) => {
+  const roundTypeOptions = roundTypes;
 
-    return (
-      <Popover>
-        <PopoverTrigger
-          render={
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              disabled={disabled}
-            >
-              <Settings />
-            </Button>
-          }
-        />
-        <PopoverContent className="w-80" side="top">
-          <div className="grid gap-4">
-            <group.Subscribe
-              selector={(state) => ({
-                roundType: state.values.round.type,
-              })}
-            >
-              {({ roundType }) => {
-                return (
-                  <div className="grid gap-2">
-                    <group.AppField name="round.type">
-                      {(field) => {
-                        const isInvalid =
-                          field.state.meta.isTouched &&
-                          !field.state.meta.isValid;
-                        const fieldValue = field.state.value;
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={disabled}
+            aria-label="Open round settings"
+            aria-haspopup="dialog"
+          >
+            <Settings />
+          </Button>
+        }
+      />
+      <PopoverContent className="w-80" side="top">
+        <div className="grid gap-4">
+          <form.Field name={`${roundPath}.type` as any}>
+            {(typeField: any) => {
+              const isInvalid =
+                typeField.state.meta.isTouched && !typeField.state.meta.isValid;
+              const roundType = typeField.state.value as Round["type"];
+
+              return (
+                <div className="grid gap-2">
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel>Scoring Type</FieldLabel>
+                    <Select
+                      value={typeField.state.value}
+                      onValueChange={(value) => {
+                        const parsed = insertRoundSchema
+                          .required()
+                          .pick({ type: true })
+                          .safeParse({ type: value });
+
+                        if (parsed.success) {
+                          typeField.handleChange(parsed.data.type);
+                          return;
+                        }
+
+                        toast.error(
+                          parsed.error.issues[0]?.message ??
+                            "Invalid scoring type.",
+                        );
+                      }}
+                    >
+                      <SelectTrigger aria-invalid={isInvalid}>
+                        <SelectValue placeholder="Select a scoring type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roundTypeOptions.map((condition) => (
+                          <SelectItem key={condition} value={condition}>
+                            {condition}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {isInvalid && (
+                      <FieldError errors={typeField.state.meta.errors} />
+                    )}
+                  </Field>
+                  {roundType === "Checkbox" && (
+                    <form.Field name={`${roundPath}.score` as any}>
+                      {(scoreField: any) => {
+                        const scoreIsInvalid =
+                          scoreField.state.meta.isTouched &&
+                          !scoreField.state.meta.isValid;
                         return (
-                          <Field data-invalid={isInvalid}>
-                            <FieldLabel>Scoring Type</FieldLabel>
-                            <Select
-                              value={fieldValue}
+                          <Field data-invalid={scoreIsInvalid}>
+                            <FieldLabel>Score</FieldLabel>
+                            <NumberInput
+                              defaultValue={
+                                scoreField.state.value ?? defaultRound.score
+                              }
                               onValueChange={(value) => {
-                                const safeValue = insertRoundSchema
-                                  .required()
-                                  .pick({ type: true })
-                                  .parse({ type: value });
-                                field.handleChange(safeValue.type);
+                                const numValue = value ?? 0;
+                                scoreField.handleChange(numValue);
                               }}
-                            >
-                              <SelectTrigger aria-invalid={isInvalid}>
-                                <SelectValue placeholder="Select a scoring type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {roundTypeOptions.map((condition) => (
-                                  <SelectItem key={condition} value={condition}>
-                                    {condition}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {isInvalid && (
-                              <FieldError errors={field.state.meta.errors} />
+                              className="border-none text-center"
+                            />
+                            {scoreIsInvalid && (
+                              <FieldError
+                                errors={scoreField.state.meta.errors}
+                              />
                             )}
                           </Field>
                         );
                       }}
-                    </group.AppField>
-                    {roundType === "Checkbox" && (
-                      <group.AppField name="round.score">
-                        {(field) => {
-                          const isInvalid =
-                            field.state.meta.isTouched &&
-                            !field.state.meta.isValid;
-                          return (
-                            <Field data-invalid={isInvalid}>
-                              <FieldLabel>Score</FieldLabel>
-                              <NumberInput
-                                defaultValue={field.state.value}
-                                onValueChange={(value) => {
-                                  const numValue = value ?? 0;
-                                  field.handleChange(numValue);
-                                }}
-                                className="border-none text-center"
-                              />
-                              {isInvalid && (
-                                <FieldError errors={field.state.meta.errors} />
-                              )}
-                            </Field>
-                          );
-                        }}
-                      </group.AppField>
-                    )}
-                  </div>
-                );
-              }}
-            </group.Subscribe>
-          </div>
-        </PopoverContent>
-      </Popover>
-    );
-  },
-});
+                    </form.Field>
+                  )}
+                </div>
+              );
+            }}
+          </form.Field>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};

@@ -25,8 +25,9 @@ import {
   editGameFormSchema,
   transformEditGameDataToFormValues,
 } from "./edit-game.types";
-import { ScoresheetForm } from "./edit-scoresheet-form";
-import { GameDetailsForm } from "./game-details-form";
+import { ScoresheetsForm } from "./scoresheets-form";
+import { GameDetailsSection } from "../form/game-details-section";
+import { ScoresheetStep } from "../form/scoresheet-step";
 
 export function EditGameForm({
   initialGame,
@@ -227,43 +228,48 @@ export function EditGameForm({
                   </CardTitle>
                 </CardHeader>
                 {activeForm === "scoresheet" && currentScoresheet && (
-                  <CardContent>
-                    <ScoresheetForm
-                      form={form}
-                      key={`scoresheet-${activeScoreSheetIndex}-${currentScoresheet.scoresheet.id}`}
-                      onSave={() => {
-                        if (currentScoresheet.scoresheetType !== "new") {
-                          form.setFieldValue(
-                            `scoresheets[${activeScoreSheetIndex}].scoreSheetChanged`,
-                            true,
-                          );
-                          form.setFieldValue(
-                            `scoresheets[${activeScoreSheetIndex}].roundChanged`,
-                            true,
-                          );
-                        }
-                        form.setFieldValue("activeForm", "game");
-                      }}
-                      onBack={() => {
-                        form.setFieldValue("activeForm", "game");
-                      }}
-                      roundsEditable={editable}
-                      scoresheetEditable={editable}
-                    />
-                  </CardContent>
+                  <ScoresheetStep
+                    mode="edit"
+                    form={form}
+                    key={`scoresheet-${activeScoreSheetIndex}-${currentScoresheet.scoresheet.id}`}
+                    onSave={() => {
+                      if (currentScoresheet.scoresheetType !== "new") {
+                        form.setFieldValue(
+                          `scoresheets[${activeScoreSheetIndex}].scoreSheetChanged`,
+                          true,
+                        );
+                        form.setFieldValue(
+                          `scoresheets[${activeScoreSheetIndex}].roundChanged`,
+                          true,
+                        );
+                      }
+                      form.setFieldValue("activeForm", "game");
+                    }}
+                    onBack={() => {
+                      form.setFieldValue("activeForm", "game");
+                    }}
+                    roundsEditable={editable}
+                    scoresheetEditable={editable}
+                  />
                 )}
                 {activeForm === "game" && (
                   <>
                     <CardContent>
-                      <GameDetailsForm
+                      <GameDetailsSection
                         form={form}
+                        variant="edit"
                         imagePreview={imagePreview}
                         setImagePreview={setImagePreview}
-                        setIsScoresheet={() =>
-                          form.setFieldValue("activeForm", "scoresheet")
+                        onEditRoles={() =>
+                          form.setFieldValue("activeForm", "roles")
                         }
-                        setActiveScoreSheet={(index) =>
-                          form.setFieldValue("activeScoreSheetIndex", index)
+                        scoresheets={
+                          <ScoresheetsForm
+                            form={form}
+                            onOpenScoresheet={() =>
+                              form.setFieldValue("activeForm", "scoresheet")
+                            }
+                          />
                         }
                       />
                     </CardContent>
