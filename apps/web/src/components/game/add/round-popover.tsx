@@ -107,7 +107,9 @@ export const RoundPopOver = ({
                           <Field data-invalid={scoreIsInvalid}>
                             <FieldLabel>Score</FieldLabel>
                             <NumberInput
-                              defaultValue={scoreField.state.value ?? defaultRound.score}
+                              defaultValue={
+                                scoreField.state.value ?? defaultRound.score
+                              }
                               onValueChange={(value) => {
                                 const numValue = value ?? 0;
                                 scoreField.handleChange(numValue);
@@ -115,7 +117,9 @@ export const RoundPopOver = ({
                               className="border-none text-center"
                             />
                             {scoreIsInvalid && (
-                              <FieldError errors={scoreField.state.meta.errors} />
+                              <FieldError
+                                errors={scoreField.state.meta.errors}
+                              />
                             )}
                           </Field>
                         );

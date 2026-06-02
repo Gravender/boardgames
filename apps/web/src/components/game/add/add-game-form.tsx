@@ -205,7 +205,9 @@ export function AddGameForm({
                     setImagePreview={setImagePreview}
                     advancedOpen={isMoreOptionsOpen}
                     onAdvancedOpenChange={setIsMoreOptionsOpen}
-                    onEditRoles={() => form.setFieldValue("activeForm", "roles")}
+                    onEditRoles={() =>
+                      form.setFieldValue("activeForm", "roles")
+                    }
                     scoresheets={
                       <ScoresheetsForm
                         form={form}

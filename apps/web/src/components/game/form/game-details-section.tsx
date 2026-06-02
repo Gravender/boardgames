@@ -119,7 +119,9 @@ const GameDetailsFieldsGroup = withFieldGroup({
     scoresheets,
   }) {
     return (
-      <group.Subscribe selector={(state) => state.values.roles.length as number}>
+      <group.Subscribe
+        selector={(state) => state.values.roles.length as number}
+      >
         {(rolesLength) => (
           <div className="space-y-8">
             <group.AppField name="name">
@@ -229,7 +231,9 @@ const GameDetailsFieldsGroup = withFieldGroup({
                         }}
                       />
                     </div>
-                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                    {isInvalid && (
+                      <FieldError errors={field.state.meta.errors} />
+                    )}
                   </Field>
                 );
               }}
@@ -388,4 +392,3 @@ const GameDetailsFieldsGroup = withFieldGroup({
     );
   },
 });
-

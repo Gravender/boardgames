@@ -92,7 +92,9 @@ export const ScoresheetStep = (props: ScoresheetStepProps) => {
   return (
     <form.Subscribe
       selector={(state: any) => ({
-        scoresheetIndex: state.values.activeScoreSheetIndex as number | undefined,
+        scoresheetIndex: state.values.activeScoreSheetIndex as
+          | number
+          | undefined,
       })}
     >
       {({ scoresheetIndex }: any) => {
@@ -157,8 +159,8 @@ const ScoresheetFieldsGroup = withFieldGroup({
       <group.Subscribe
         selector={(state) => ({
           isCoop: state.values.scoresheet.isCoop as boolean,
-          winCondition:
-            ((state.values.scoresheet.winCondition as any) ?? "Highest Score") as any,
+          winCondition: ((state.values.scoresheet.winCondition as any) ??
+            "Highest Score") as any,
         })}
       >
         {({ isCoop, winCondition }) => {
@@ -276,7 +278,7 @@ const ScoresheetFieldsGroup = withFieldGroup({
                         group.form.setFieldValue(
                           "scoresheets",
                           normalizeDefaultScoresheets(
-                          group.form.getFieldValue("scoresheets") as any,
+                            group.form.getFieldValue("scoresheets") as any,
                             scoresheetIndex,
                           ),
                         );
@@ -287,7 +289,10 @@ const ScoresheetFieldsGroup = withFieldGroup({
                       const isInvalid =
                         field.state.meta.isTouched && !field.state.meta.isValid;
                       return (
-                        <Field data-invalid={isInvalid} orientation="horizontal">
+                        <Field
+                          data-invalid={isInvalid}
+                          orientation="horizontal"
+                        >
                           <Checkbox
                             id={field.name}
                             checked={field.state.value}
@@ -296,7 +301,10 @@ const ScoresheetFieldsGroup = withFieldGroup({
                             }
                             disabled={!scoresheetEditable}
                           />
-                          <FieldLabel htmlFor={field.name} className="font-normal">
+                          <FieldLabel
+                            htmlFor={field.name}
+                            className="font-normal"
+                          >
                             Is Default?
                           </FieldLabel>
                           {isInvalid && (
@@ -398,7 +406,9 @@ const ScoresheetFieldsGroup = withFieldGroup({
                     const isInvalid = !field.state.meta.isValid;
                     return (
                       <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name}>Win Condition</FieldLabel>
+                        <FieldLabel htmlFor={field.name}>
+                          Win Condition
+                        </FieldLabel>
                         <Select
                           value={field.state.value}
                           onValueChange={(value) => {
@@ -410,13 +420,19 @@ const ScoresheetFieldsGroup = withFieldGroup({
                               return;
                             }
                             toast.error("Invalid win condition.");
-                            posthog.capture("scoresheet_win_condition_invalid", {
-                              value,
-                            });
+                            posthog.capture(
+                              "scoresheet_win_condition_invalid",
+                              {
+                                value,
+                              },
+                            );
                           }}
                           disabled={!scoresheetEditable}
                         >
-                          <SelectTrigger aria-invalid={isInvalid} name="winCondition">
+                          <SelectTrigger
+                            aria-invalid={isInvalid}
+                            name="winCondition"
+                          >
                             <SelectValue placeholder="Select a win condition" />
                           </SelectTrigger>
                           <SelectContent>
@@ -427,7 +443,9 @@ const ScoresheetFieldsGroup = withFieldGroup({
                             ))}
                           </SelectContent>
                         </Select>
-                        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
                       </Field>
                     );
                   }}
@@ -451,8 +469,9 @@ const ScoresheetFieldsGroup = withFieldGroup({
                     onChange: ({ value, fieldApi }) => {
                       const rounds = fieldApi.form.getFieldValue("rounds");
                       if (
-                        fieldApi.form.getFieldValue("scoresheet.winCondition") !==
-                          "Manual" &&
+                        fieldApi.form.getFieldValue(
+                          "scoresheet.winCondition",
+                        ) !== "Manual" &&
                         value === "None"
                       ) {
                         return [
@@ -463,8 +482,9 @@ const ScoresheetFieldsGroup = withFieldGroup({
                         ];
                       }
                       if (
-                        fieldApi.form.getFieldValue("scoresheet.winCondition") !==
-                          "Manual" &&
+                        fieldApi.form.getFieldValue(
+                          "scoresheet.winCondition",
+                        ) !== "Manual" &&
                         value !== "Manual" &&
                         Array.isArray(rounds) &&
                         rounds.length === 0
@@ -484,7 +504,9 @@ const ScoresheetFieldsGroup = withFieldGroup({
                     const isInvalid = !field.state.meta.isValid;
                     return (
                       <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name}>Scoring Method</FieldLabel>
+                        <FieldLabel htmlFor={field.name}>
+                          Scoring Method
+                        </FieldLabel>
                         <FieldDescription>
                           Select how the scoresheet rounds are scored.
                         </FieldDescription>
@@ -505,7 +527,10 @@ const ScoresheetFieldsGroup = withFieldGroup({
                           }}
                           disabled={!scoresheetEditable}
                         >
-                          <SelectTrigger aria-invalid={isInvalid} name={"roundsScore"}>
+                          <SelectTrigger
+                            aria-invalid={isInvalid}
+                            name={"roundsScore"}
+                          >
                             <SelectValue placeholder="Select a scoring method" />
                           </SelectTrigger>
                           <SelectContent>
@@ -516,7 +541,9 @@ const ScoresheetFieldsGroup = withFieldGroup({
                             ))}
                           </SelectContent>
                         </Select>
-                        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
                       </Field>
                     );
                   }}
@@ -549,7 +576,9 @@ const ScoresheetFieldsGroup = withFieldGroup({
                                   className="flex items-center justify-between gap-2"
                                 >
                                   <div className="flex items-center gap-2">
-                                    <group.AppField name={`rounds[${index}].color`}>
+                                    <group.AppField
+                                      name={`rounds[${index}].color`}
+                                    >
                                       {(field: any) => {
                                         const isInvalid =
                                           field.state.meta.isTouched &&
@@ -576,7 +605,9 @@ const ScoresheetFieldsGroup = withFieldGroup({
                                         );
                                       }}
                                     </group.AppField>
-                                    <group.AppField name={`rounds[${index}].name`}>
+                                    <group.AppField
+                                      name={`rounds[${index}].name`}
+                                    >
                                       {(field: any) => (
                                         <field.TextField
                                           label="Round Name"
@@ -620,7 +651,9 @@ const ScoresheetFieldsGroup = withFieldGroup({
                                       variant="destructive"
                                       size="icon"
                                       type="button"
-                                      onClick={() => roundsField.removeValue(index)}
+                                      onClick={() =>
+                                        roundsField.removeValue(index)
+                                      }
                                       disabled={!roundsEditable}
                                     >
                                       <Trash />
@@ -689,4 +722,3 @@ const ScoresheetFieldsGroup = withFieldGroup({
     );
   },
 });
-
