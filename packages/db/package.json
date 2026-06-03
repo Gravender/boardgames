@@ -51,20 +51,20 @@
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
-    "drizzle-orm": "1.0.0-beta.22",
-    "pg": "^8.17.2",
-    "tsx": "^4.19.2",
+    "drizzle-orm": "1.0.0-rc.3",
+    "pg": "^8.21.0",
+    "tsx": "^4.22.4",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@board-games/config": "workspace:*",
-    "@faker-js/faker": "^9.6.0",
+    "@faker-js/faker": "^9.9.0",
     "@types/d3": "^7.4.3",
     "@types/node": "catalog:",
-    "@types/pg": "^8.16.0",
+    "@types/pg": "^8.20.0",
     "d3": "^7.9.0",
-    "date-fns": "^4.1.0",
-    "drizzle-kit": "1.0.0-beta.22",
+    "date-fns": "^4.4.0",
+    "drizzle-kit": "1.0.0-rc.3",
     "typescript": "catalog:"
   }
 }

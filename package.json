@@ -38,14 +38,14 @@
   },
   "devDependencies": {
     "@board-games/config": "workspace:*",
-    "@turbo/gen": "^2.9.14",
+    "@turbo/gen": "^2.9.16",
     "dotenv": "^17.4.2",
     "dotenv-cli": "^10.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
-    "turbo": "^2.9.14",
+    "turbo": "^2.9.16",
     "typescript": "^6.0.3",
     "zod": "catalog:"
   },

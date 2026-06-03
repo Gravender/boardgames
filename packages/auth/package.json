@@ -19,13 +19,15 @@
     "lint:fix": "oxlint --fix --report-unused-disable-directives"
   },
   "dependencies": {
+    "@better-auth/utils": "0.4.0",
+    "@better-auth/drizzle-adapter": "1.6.2",
     "@better-auth/expo": "catalog:",
     "@board-games/db": "workspace:*",
-    "@t3-oss/env-core": "^0.13.8",
+    "@t3-oss/env-core": "^0.13.11",
     "better-auth": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-email": "^6.1.4",
+    "react-email": "^6.5.0",
     "resend": "^4.8.0",
     "zod": "catalog:"
   },
