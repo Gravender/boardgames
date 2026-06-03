@@ -1,9 +1,10 @@
 import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
+import type { Auth as BetterAuthType } from "better-auth";
 import React from "react";
 import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { admin, oAuthProxy, username } from "better-auth/plugins";
 import { Resend } from "resend";
 
@@ -71,7 +72,7 @@ export function initAuth<
 
   extraPlugins?: TExtraPlugins;
 }) {
-  const config = {
+  const config: BetterAuthOptions = {
     database: drizzleAdapter(db, {
       provider: "pg",
       schema: {
@@ -140,7 +141,7 @@ export function initAuth<
       username(),
       admin(),
       ...(options.extraPlugins ?? []),
-    ],
+    ] as BetterAuthPlugin[],
     socialProviders: {
       github: {
         clientId: options.githubClientId,
@@ -159,10 +160,10 @@ export function initAuth<
         console.error("BETTER AUTH API ERROR", error, ctx);
       },
     },
-  } satisfies BetterAuthOptions;
+  };
 
   return betterAuth(config);
 }
 
-export type Auth = ReturnType<typeof initAuth>;
+export type Auth = BetterAuthType;
 export type Session = Auth["$Infer"]["Session"];

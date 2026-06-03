@@ -23,8 +23,8 @@
     "@board-games/auth": "workspace:*",
     "@board-games/config": "workspace:*",
     "@board-games/db": "workspace:*",
-    "@playwright/test": "^1.53.1",
-    "@t3-oss/env-core": "^0.13.8",
+    "@playwright/test": "^1.60.0",
+    "@t3-oss/env-core": "^0.13.11",
     "typescript": "catalog:",
     "zod": "catalog:"
   }
