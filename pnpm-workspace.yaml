@@ -18,7 +18,7 @@ catalog:
   '@types/node': ^22.19.19
   '@types/react': ^19.2.16
   '@types/react-dom': ^19.2.3
-  better-auth: 1.6.2
+  better-auth: 1.6.3
   oxfmt: ^0.46.0
   oxlint: ^1.68.0
   react: ^19.2.7
